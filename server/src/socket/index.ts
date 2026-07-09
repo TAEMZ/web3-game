@@ -4,6 +4,7 @@ import { io } from "../server.js";
 import {
     chat,
     claimAbandoned,
+    emote,
     getLatestGame,
     joinAsPlayer,
     joinLobby,
@@ -13,28 +14,17 @@ import {
     sendMove
 } from "./game.socket.js";
 
-const REFRESH_INTERVAL = 30_000;
-const CRITICAL_EVENTS = new Set(["joinLobby", "joinAsPlayer", "resign", "claimAbandoned"]);
-
 const socketConnect = (socket: Socket) => {
     const req = socket.request;
-    let lastReload = 0;
 
-    socket.use((event, next) => {
-        const now = Date.now();
-        const isCritical = CRITICAL_EVENTS.has(event[0] as string);
-        if (isCritical || now - lastReload > REFRESH_INTERVAL) {
-            req.session.reload((err) => {
-                if (err) {
-                    socket.disconnect();
-                } else {
-                    lastReload = now;
-                    next();
-                }
-            });
-        } else {
-            next();
-        }
+    socket.use((__, next) => {
+        req.session.reload((err) => {
+            if (err) {
+                socket.disconnect();
+            } else {
+                next();
+            }
+        });
     });
 
     socket.on("disconnect", leaveLobby);
@@ -46,6 +36,7 @@ const socketConnect = (socket: Socket) => {
     socket.on("sendMove", sendMove);
     socket.on("joinAsPlayer", joinAsPlayer);
     socket.on("chat", chat);
+    socket.on("emote", emote);
     socket.on("rtcSignal", rtcSignal);
     socket.on("claimAbandoned", claimAbandoned);
     socket.on("resign", resign);

@@ -24,13 +24,8 @@ declare module "http" {
         };
     }
 }
-const pgStore = new PGSession({ pool: db, createTableIfMissing: true });
-pgStore.on('error', function(err) {
-    console.error('Session store error:', err.message);
-});
-
 const sessionMiddleware = session({
-    store: pgStore,
+    store: new PGSession({ pool: db, createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET || "make sure to change this!",
     resave: false,
     saveUninitialized: false,

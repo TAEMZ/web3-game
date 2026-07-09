@@ -1,7 +1,52 @@
 import type { Game, User } from "@arena/types";
 import { db } from "../index.js";
+import { mintReward, isTokenConfigured } from "../../web3/arena.js";
+import { burnFromCustodial, isCustodyConfigured } from "../../web3/custody.js";
+import WagerModel from "./wager.model.js";
 
 export const activeGames: Game[] = [];
+
+// Reward amounts (whole ARENA tokens), minted on-chain to the player's wallet.
+const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
+const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
+const RESIGN_PENALTY = Number(process.env.RESIGN_PENALTY ?? 25);
+
+// Look up a player's linked wallet address (null for guests/bots/unlinked).
+const walletOf = async (userId?: number | string): Promise<string | null> => {
+    if (!userId || typeof userId !== "number") return null;
+    const r = await db.query(`SELECT wallet_address FROM "user" WHERE id=$1`, [userId]);
+    return r.rowCount && r.rows[0].wallet_address ? (r.rows[0].wallet_address as string) : null;
+};
+
+// Mint the on-chain reward for a finished game. Runs fire-and-forget after the
+// game is persisted; failures are logged and never break the game-over flow.
+// No-ops (falls back to the DB-simulated balance) until the token is deployed.
+const distributeRewards = async (game: Game, white: User, black: User): Promise<void> => {
+    try {
+        if (!isTokenConfigured()) return;
+        if (game.winner === "draw") {
+            for (const p of [white, black]) {
+                const w = await walletOf(p.id);
+                if (w) await mintReward(w, REWARD_DRAW);
+            }
+        } else if (game.winner === "white" || game.winner === "black") {
+            const winner = game.winner === "white" ? white : black;
+            const loser = game.winner === "white" ? black : white;
+            const w = await walletOf(winner.id);
+            if (w) await mintReward(w, REWARD_WIN);
+            // Resignation penalty: actually burn ARENA from the resigner (loser).
+            if (game.endReason === "resignation" && typeof loser.id === "number" && isCustodyConfigured()) {
+                try {
+                    await burnFromCustodial(loser.id, RESIGN_PENALTY);
+                } catch (e) {
+                    console.warn(`[web3] resign penalty skipped for user ${loser.id}:`, (e as Error).message);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("[web3] distributeRewards error:", (err as Error).message);
+    }
+};
 
 export const save = async (game: Game) => {
     try {
@@ -60,10 +105,15 @@ export const save = async (game: Game) => {
                 }
             }
         }
+        // Fire-and-forget on-chain settlement (won't block the game-over flow):
+        //  - mint the base ARENA reward to the winner
+        //  - if this was a wager match, release the escrow pot to the winner
+        void distributeRewards(game, white, black);
+        void WagerModel.settleForGame(game);
         return {
             id: res.rows[0].id,
             winner: res.rows[0].winner,
-            endReason: res.rows[0].end_reason,
+            endReason: res.rows[0].reason,
             pgn: res.rows[0].pgn,
             white: {
                 id: res.rows[0].white_id || undefined,

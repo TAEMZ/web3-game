@@ -1,0 +1,11 @@
+{
+  "chainId": 11155111,
+  "network": "ethereum-sepolia",
+  "deployer": "0x8BC1B1243D7924E68C61fFDb14779aB6F8B094e6",
+  "ArenaToken": "0xa09a9f56167434af7b183a7d44ba0e06c1118d78",
+  "ArenaEscrow": "0x0b760c60e79abb5742997acb2e4dbd70439b492e",
+  "explorer": {
+    "token": "https://sepolia.etherscan.io/address/0xa09a9f56167434af7b183a7d44ba0e06c1118d78",
+    "escrow": "https://sepolia.etherscan.io/address/0x0b760c60e79abb5742997acb2e4dbd70439b492e"
+  }
+}

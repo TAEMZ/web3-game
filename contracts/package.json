@@ -1,0 +1,14 @@
+{
+  "name": "@arena/contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "node compile.mjs",
+    "deploy": "node deploy.mjs"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "solc": "0.8.24",
+    "viem": "^2.54.6"
+  }
+}

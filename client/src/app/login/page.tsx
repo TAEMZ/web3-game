@@ -114,7 +114,7 @@ export default function LoginPage() {
                 type="password"
                 className="input-field"
                 placeholder="Enter your password"
-                minLength={6}
+                minLength={3}
                 required
               />
             </div>
@@ -186,7 +186,7 @@ export default function LoginPage() {
                 type="password"
                 className="input-field"
                 placeholder="Create a password"
-                minLength={6}
+                minLength={3}
                 required
               />
             </div>

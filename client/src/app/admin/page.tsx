@@ -2,6 +2,7 @@
 
 import {
   IconAlertTriangle,
+  IconCoins,
   IconDeviceGamepad2,
   IconUsers,
   IconWallet,
@@ -43,6 +44,26 @@ interface Report {
   created_at: string;
 }
 
+interface Deposit {
+  id: number;
+  user_name: string;
+  amount: string;
+  method: string | null;
+  reference: string | null;
+  wallet: string | null;
+  status: string;
+  created_at: string;
+}
+interface Withdrawal {
+  id: number;
+  user_name: string;
+  amount: string;
+  usd: string | null;
+  payout_to: string | null;
+  status: string;
+  created_at: string;
+}
+
 const REASON_LABEL: Record<string, string> = {
   cheating: "Cheating",
   abusive_chat: "Abusive chat",
@@ -54,11 +75,13 @@ export default function AdminPage() {
   const session = useContext(SessionContext);
   const router = useRouter();
   const user = session?.user;
-  const checking = user === undefined;
+  const checking = user === undefined || (!!user && Object.keys(user).length === 0);
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [reports, setReports] = useState<Report[] | null>(null);
+  const [deposits, setDeposits] = useState<Deposit[] | null>(null);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -68,14 +91,53 @@ export default function AdminPage() {
   }, [checking, user?.id, user?.is_admin, router]);
 
   async function load() {
-    const [o, p, r] = await Promise.all([
+    const [o, p, r, d, w] = await Promise.all([
       fetch(`${API_URL}/v1/admin/overview`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/players`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/reports`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+      fetch(`${API_URL}/v1/deposits/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+      fetch(`${API_URL}/v1/withdrawals/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
     ]);
     if (o) setOverview(o);
     if (p) setPlayers(p.players);
     if (r) setReports(r.reports);
+    if (d) setDeposits(d.deposits);
+    if (w) setWithdrawals(w.withdrawals);
+  }
+
+  async function withdrawalAction(id: number, action: "pay" | "reject", ok: string) {
+    setBusy(`wd-${id}`);
+    try {
+      const res = await fetch(`${API_URL}/v1/withdrawals/${id}/${action}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      flash(res.ok ? ok : data.error || "Action failed");
+      await load();
+    } catch {
+      flash("Action failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // Top-up requests are on /v1/deposits (not /v1/admin), so they need their own poster.
+  async function depositAction(id: number, action: "approve" | "reject", ok: string) {
+    setBusy(`dep-${id}`);
+    try {
+      const res = await fetch(`${API_URL}/v1/deposits/${id}/${action}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      flash(res.ok ? ok : data.error || "Action failed");
+      await load();
+    } catch {
+      flash("Action failed");
+    } finally {
+      setBusy(null);
+    }
   }
 
   useEffect(() => {
@@ -151,6 +213,115 @@ export default function AdminPage() {
             <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Top-up requests */}
+      <div className="glass-dark mb-6 overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+        <div className="tricolor-bar" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+            <IconCoins size={18} /> Top-up requests
+          </h2>
+          <span className="text-xs text-[rgba(216,204,176,0.4)]">{deposits?.length ?? 0} pending</span>
+        </div>
+        <div className="px-3 pb-3">
+          {deposits && deposits.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-[rgba(216,204,176,0.4)]">No pending top-ups.</p>
+          )}
+          {deposits?.map((d) => (
+            <div
+              key={d.id}
+              className="mb-2 rounded-xl border border-[rgba(201,162,39,0.12)] bg-[rgba(0,0,0,0.25)] p-3.5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-[#d8ccb0]">
+                    <span className="font-bold text-[#E8C040] tabular-nums">{Number(d.amount)} ARENA</span>
+                    <span className="mx-2 text-[rgba(216,204,176,0.35)]">for</span>
+                    <span className="font-semibold">{d.user_name}</span>
+                  </p>
+                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-[rgba(216,204,176,0.5)]">
+                    <span>method: <span className="text-[#d8ccb0]">{d.method || "—"}</span></span>
+                    <span>ref: <span className="text-[#d8ccb0]">{d.reference || "—"}</span></span>
+                    {d.wallet && (
+                      <span className="font-mono">→ {d.wallet.slice(0, 6)}…{d.wallet.slice(-4)}</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    disabled={busy === `dep-${d.id}`}
+                    onClick={() => depositAction(d.id, "approve", `Released ${Number(d.amount)} ARENA to ${d.user_name}`)}
+                    className="btn-gold px-3 py-1.5 text-xs"
+                  >
+                    {busy === `dep-${d.id}` ? "…" : "Verify & release"}
+                  </button>
+                  <button
+                    disabled={busy === `dep-${d.id}`}
+                    onClick={() => depositAction(d.id, "reject", `Rejected top-up from ${d.user_name}`)}
+                    className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Withdrawal requests */}
+      <div className="glass-dark mb-6 overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+        <div className="tricolor-bar" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+            <IconWallet size={18} /> Cash-out requests
+          </h2>
+          <span className="text-xs text-[rgba(216,204,176,0.4)]">{withdrawals?.length ?? 0} pending</span>
+        </div>
+        <div className="px-3 pb-3">
+          {withdrawals && withdrawals.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-[rgba(216,204,176,0.4)]">No pending cash-outs.</p>
+          )}
+          {withdrawals?.map((w) => (
+            <div
+              key={w.id}
+              className="mb-2 rounded-xl border border-[rgba(201,162,39,0.12)] bg-[rgba(0,0,0,0.25)] p-3.5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-[#d8ccb0]">
+                    <span className="font-semibold">{w.user_name}</span>
+                    <span className="mx-2 text-[rgba(216,204,176,0.35)]">wants</span>
+                    <span className="font-bold text-[#E8C040] tabular-nums">
+                      ${Number(w.usd).toLocaleString()}
+                    </span>
+                    <span className="ml-1 text-xs text-[rgba(216,204,176,0.4)]">for {Number(w.amount)} ARENA</span>
+                  </p>
+                  <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
+                    send to: <span className="text-[#d8ccb0]">{w.payout_to || "—"}</span>
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    disabled={busy === `wd-${w.id}`}
+                    onClick={() => withdrawalAction(w.id, "pay", `Marked ${w.user_name}'s cash-out paid`)}
+                    className="btn-gold px-3 py-1.5 text-xs"
+                  >
+                    {busy === `wd-${w.id}` ? "…" : "Mark paid"}
+                  </button>
+                  <button
+                    disabled={busy === `wd-${w.id}`}
+                    onClick={() => withdrawalAction(w.id, "reject", `Rejected ${w.user_name}'s cash-out`)}
+                    className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Reports */}

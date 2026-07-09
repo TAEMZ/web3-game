@@ -8,7 +8,6 @@ import { useContext, useEffect, useState } from "react";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { createGame } from "@/lib/game";
-import WalletOnboarding from "@/components/onboarding/WalletOnboarding";
 import CreateGame from "./CreateGame";
 import JoinGame from "./JoinGame";
 
@@ -23,10 +22,8 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   const session = useContext(SessionContext);
   const router = useRouter();
   const user = session?.user;
-  const isLoading = user === undefined;
+  const isLoading = !!user && Object.keys(user).length === 0;
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
 
@@ -40,16 +37,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
     }
     if (!user?.id) router.replace("/login");
   }, [isLoading, user?.id, user?.is_admin, router]);
-
-  // Show onboarding for users without wallet (only once per session)
-  useEffect(() => {
-    if (!isLoading && user?.id && !onboardingChecked) {
-      const hasWallet = !!user.walletAddress;
-      const hasSeenOnboarding = sessionStorage.getItem("hasSeenOnboarding");
-      if (!hasWallet && !hasSeenOnboarding) setShowOnboarding(true);
-      setOnboardingChecked(true);
-    }
-  }, [isLoading, user?.id, user?.walletAddress, onboardingChecked]);
 
   // Pull the player's record + token balance for the hero.
   useEffect(() => {
@@ -73,10 +60,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
     };
   }, [isLoading, user?.id]);
 
-  const dismissOnboarding = () => {
-    sessionStorage.setItem("hasSeenOnboarding", "true");
-    setShowOnboarding(false);
-  };
 
   async function quickPlay() {
     setQuickLoading(true);
@@ -108,10 +91,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
 
   return (
     <>
-      {showOnboarding && (
-        <WalletOnboarding onComplete={dismissOnboarding} onSkip={dismissOnboarding} />
-      )}
-
       <div className="animate-fade-in-up mx-auto w-full max-w-5xl px-4 py-8">
         {/* ── Hero: who you are + your record ── */}
         <section

@@ -231,3 +231,30 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background: rgba(201, 162, 39, 0.5);
 }
+
+/* ── Emote reactions (float up + fade over the board) ── */
+@keyframes emoteFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+  }
+  30% {
+    transform: translateY(-6px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.9);
+  }
+}
+.emote-float {
+  animation: emoteFloat 2.6s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .emote-float {
+    animation-duration: 1.6s;
+  }
+}

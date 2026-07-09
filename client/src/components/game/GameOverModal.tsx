@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Game } from "@arena/types";
+import { API_URL } from "@/config";
 
 type Outcome = "win" | "loss" | "draw" | "spectator";
 
@@ -11,8 +12,8 @@ interface GameOverModalProps {
   winnerName?: string;
   /** True when THIS player is the one who resigned (quit). */
   didResign: boolean;
-  hasWallet: boolean;
   gameId: number;
+  gameCode?: string;
   /** ARENA docked for quitting, from the server. */
   resignPenalty: number;
 }
@@ -36,42 +37,96 @@ function reasonText(reason: Game["endReason"]): string {
   }
 }
 
+const WIN_REWARD = 50;
+const DRAW_REWARD = 10;
+
 export default function GameOverModal({
   outcome,
   reason,
   winnerName,
   didResign,
-  hasWallet,
   gameId,
+  gameCode,
   resignPenalty,
 }: GameOverModalProps) {
   const [showConfetti, setShowConfetti] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [settling, setSettling] = useState(true);
+  const [wagerStake, setWagerStake] = useState<number | null>(null);
+  const [wagerResult, setWagerResult] = useState<"won" | "lost" | "draw" | null>(null);
 
   useEffect(() => {
     if (outcome === "win") {
       setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 3500);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setShowConfetti(false), 3500);
+      return () => clearTimeout(t);
     }
   }, [outcome]);
 
+  // Poll the real balance (+ wager result) — the on-chain settle lands a few
+  // seconds after the game ends, so we refresh a handful of times.
+  useEffect(() => {
+    if (outcome === "spectator") return;
+    let active = true;
+    let tries = 0;
+    async function refresh() {
+      try {
+        const r = await fetch(`${API_URL}/v1/rewards/user`, { credentials: "include" });
+        let myWallet: string | null = null;
+        if (r.ok) {
+          const d = await r.json();
+          if (active) {
+            setBalance(d.totalTokens);
+            myWallet = d.wallet;
+          }
+        }
+        if (gameCode) {
+          const wr = await fetch(`${API_URL}/v1/wager/${gameCode}`, { credentials: "include" });
+          if (wr.ok) {
+            const w = (await wr.json()).wager;
+            if (active && w && (w.state === "funded" || w.state === "settled")) {
+              setWagerStake(Number(w.stake));
+              if (w.state === "settled") {
+                if (!w.winner_wallet) setWagerResult("draw");
+                else if (myWallet && w.winner_wallet.toLowerCase() === myWallet.toLowerCase())
+                  setWagerResult("won");
+                else setWagerResult("lost");
+              }
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    refresh();
+    const iv = setInterval(() => {
+      tries += 1;
+      refresh();
+      if (tries >= 5 || !active) {
+        clearInterval(iv);
+        if (active) setSettling(false);
+      }
+    }, 6000);
+    return () => {
+      active = false;
+      clearInterval(iv);
+    };
+  }, [outcome, gameCode]);
+
   const rt = reasonText(reason);
 
-  // Per-outcome presentation.
   let icon = "♟️";
   let title = "Game Over";
   let titleColor = "#E8C040";
   let subtitle = "";
-
   if (outcome === "win") {
     icon = "🏆";
     title = "Victory!";
-    titleColor = "#E8C040";
     subtitle = reason === "resignation" ? "Your opponent resigned." : `You won ${rt}.`;
   } else if (outcome === "draw") {
     icon = "🤝";
     title = "Draw";
-    titleColor = "#E8C040";
     subtitle = rt ? `The game ended in a draw ${rt}.` : "The game ended in a draw.";
   } else if (outcome === "loss") {
     if (didResign) {
@@ -86,10 +141,20 @@ export default function GameOverModal({
       subtitle = winnerName ? `${winnerName} won ${rt}.` : `You lost ${rt}.`;
     }
   } else {
-    // spectator
-    icon = "♟️";
-    title = "Game Over";
     subtitle = winnerName ? `${winnerName} won ${rt}.` : "The game ended in a draw.";
+  }
+
+  // Build the line-by-line ARENA changes for this game.
+  const lines: { label: string; value: number }[] = [];
+  if (outcome === "win") {
+    if (wagerResult === "won" && wagerStake) lines.push({ label: "Wager winnings", value: wagerStake });
+    lines.push({ label: "Win reward", value: WIN_REWARD });
+  } else if (outcome === "draw") {
+    if (wagerStake) lines.push({ label: "Wager refunded", value: 0 });
+    lines.push({ label: "Draw reward", value: DRAW_REWARD });
+  } else if (outcome === "loss") {
+    if (wagerResult === "lost" && wagerStake) lines.push({ label: "Wager lost", value: -wagerStake });
+    if (didResign) lines.push({ label: "Resignation penalty", value: -resignPenalty });
   }
 
   return (
@@ -117,10 +182,8 @@ export default function GameOverModal({
         className="glass-dark animate-fade-in-up w-full max-w-md p-6 md:p-8 relative overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}
       >
-        {/* Ethiopian tricolor accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-600" />
 
-        {/* Result header */}
         <div className="text-center mb-6">
           <div className="text-7xl mb-4">{icon}</div>
           <h2 className="font-display text-3xl font-bold mb-2" style={{ color: titleColor }}>
@@ -129,55 +192,39 @@ export default function GameOverModal({
           <p className="text-base text-[rgba(216,204,176,0.8)]">{subtitle}</p>
         </div>
 
-        {/* Reward / penalty */}
-        {outcome === "win" && (
-          <div className="mb-6 rounded-xl bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.2)] p-4">
-            {hasWallet ? (
-              <div className="text-center py-1">
-                <p className="text-3xl font-bold text-[#E8C040]">+50 ARENA</p>
-                <p className="text-xs text-[rgba(216,204,176,0.5)] mt-1">Credited on Polygon Amoy testnet</p>
-              </div>
-            ) : (
-              <div className="text-center space-y-3">
-                <p className="text-sm text-[rgba(216,204,176,0.7)]">
-                  Connect a wallet to earn ARENA tokens and NFT badges for your wins.
-                </p>
-                <a
-                  href="/settings"
-                  className="inline-block w-full py-2 px-4 rounded-lg bg-[#E8C040] text-[#1a0f0a] font-semibold hover:bg-[#d4af3a] transition-colors"
-                >
-                  Connect Wallet
-                </a>
-              </div>
+        {/* ARENA breakdown + new balance */}
+        {outcome !== "spectator" && (
+          <div className="mb-6 rounded-xl bg-[rgba(201,162,39,0.06)] border border-[rgba(201,162,39,0.2)] p-4">
+            <div className="space-y-1.5">
+              {lines.map((l) => (
+                <div key={l.label} className="flex items-center justify-between text-sm">
+                  <span className="text-[rgba(216,204,176,0.7)]">{l.label}</span>
+                  <span
+                    className={`font-semibold tabular-nums ${
+                      l.value > 0 ? "text-[#5fb884]" : l.value < 0 ? "text-[#e06666]" : "text-[rgba(216,204,176,0.6)]"
+                    }`}
+                  >
+                    {l.value > 0 ? "+" : ""}
+                    {l.value} ARENA
+                  </span>
+                </div>
+              ))}
+              {lines.length === 0 && (
+                <p className="text-center text-sm text-[rgba(216,204,176,0.6)]">No token change this game.</p>
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t border-[rgba(201,162,39,0.15)] pt-3">
+              <span className="text-sm font-semibold text-[#E8C040]">New balance</span>
+              <span className="text-lg font-bold text-[#E8C040] tabular-nums">
+                {balance === null ? "…" : `${balance} ARENA`}
+              </span>
+            </div>
+            {settling && (
+              <p className="mt-1 text-right text-[0.65rem] text-[rgba(216,204,176,0.4)]">settling on-chain…</p>
             )}
           </div>
         )}
 
-        {outcome === "loss" && didResign && (
-          <div className="mb-6 rounded-xl bg-[rgba(184,24,24,0.1)] border border-[rgba(224,102,102,0.35)] p-4 text-center">
-            <p className="text-2xl font-bold text-[#e06666]">−{resignPenalty} ARENA</p>
-            <p className="text-xs text-[rgba(216,204,176,0.6)] mt-1">Resignation penalty for quitting</p>
-          </div>
-        )}
-
-        {outcome === "loss" && !didResign && (
-          <div className="mb-6 rounded-xl bg-[rgba(201,162,39,0.05)] border border-[rgba(201,162,39,0.15)] p-4 text-center">
-            <p className="text-sm text-[rgba(216,204,176,0.7)]">
-              No tokens this game — play again to climb back.
-            </p>
-          </div>
-        )}
-
-        {outcome === "draw" && (
-          <div className="mb-6 rounded-xl bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.2)] p-4 text-center">
-            <p className="text-2xl font-bold text-[#E8C040]">{hasWallet ? "+10 ARENA" : "Draw"}</p>
-            <p className="text-xs text-[rgba(216,204,176,0.5)] mt-1">
-              {hasWallet ? "Credited on Polygon Amoy testnet" : "Connect a wallet to earn on draws"}
-            </p>
-          </div>
-        )}
-
-        {/* Actions — leaving the game */}
         <div className="flex flex-col gap-2">
           <a
             href="/"

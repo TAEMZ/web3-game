@@ -31,9 +31,13 @@ import { syncPgn, syncSide } from "./utils";
 import VideoChat from "./VideoChat";
 import GameOverModal from "./GameOverModal";
 import ReportModal from "./ReportModal";
+import WagerPanel from "./WagerPanel";
 
 // ARENA docked for resigning; mirrors RESIGN_PENALTY in the server rewards controller.
 const RESIGN_PENALTY = 25;
+
+// Emote reactions — must match the server whitelist in game.socket.ts (EMOTES).
+const EMOTES = ["👍", "😂", "😮", "😢", "😡", "🎉", "🔥", "👏", "🤝", "😎", "♟️", "💀"];
 
 // Empty API_URL (relative mode) → connect the socket to the page's own origin.
 const socket = io(API_URL || window.location.origin, { withCredentials: true, autoConnect: false });
@@ -78,6 +82,20 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
   ]);
   const chatListRef = useRef<HTMLUListElement>(null);
   const moveListRef = useRef<HTMLDivElement>(null);
+
+  // Floating emote reactions (both players + spectators).
+  const [emotes, setEmotes] = useState<{ id: number; key: string; from: string; mine?: boolean }[]>([]);
+  const emoteId = useRef(0);
+  function pushEmote(key: string, from: string, mine = false) {
+    const id = emoteId.current++;
+    setEmotes((prev) => [...prev, { id, key, from, mine }]);
+    setTimeout(() => setEmotes((prev) => prev.filter((e) => e.id !== id)), 2600);
+  }
+  function sendEmote(key: string) {
+    if (!session?.user) return;
+    socket.emit("emote", key);
+    pushEmote(key, session.user.name || "You", true);
+  }
 
   const [abandonSeconds, setAbandonSeconds] = useState(60);
   useEffect(() => {
@@ -129,7 +147,8 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       makeMove,
       setNavFen,
       setNavIndex,
-      onGameOver: (payload) => setGameOverData(payload)
+      onGameOver: (payload) => setGameOverData(payload),
+      onEmote: ({ key, from }) => pushEmote(key, from, false)
     });
 
     return () => {
@@ -617,8 +636,8 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
               reason={reason}
               winnerName={winnerName}
               didResign={outcome === "loss" && reason === "resignation"}
-              hasWallet={!!session?.user?.walletAddress}
               gameId={gameId}
+              gameCode={lobby.code}
               resignPenalty={RESIGN_PENALTY}
             />
           );
@@ -642,6 +661,28 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                     </button>
                   )}
               </div>
+            </div>
+          )}
+
+          {/* floating emote reactions over the board */}
+          {emotes.length > 0 && (
+            <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+              {emotes.map((e, i) => (
+                <div
+                  key={e.id}
+                  className="emote-float absolute flex flex-col items-center"
+                  style={{
+                    left: `${e.mine ? 22 : 62}%`,
+                    bottom: "14%",
+                    transform: `translateX(${(i % 3) * 14 - 14}px)`
+                  }}
+                >
+                  <span className="text-4xl drop-shadow-lg sm:text-5xl">{e.key}</span>
+                  <span className="mt-0.5 max-w-[8rem] truncate rounded-full bg-black/55 px-2 py-0.5 text-[0.6rem] font-medium text-[#e8dcc0]">
+                    {e.from}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 
@@ -669,9 +710,32 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             />
           </div>
         </div>
+
+        {/* emote reaction bar */}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+          {EMOTES.map((em) => (
+            <button
+              key={em}
+              onClick={() => sendEmote(em)}
+              className="rounded-lg border border-[rgba(201,162,39,0.18)] bg-[rgba(255,255,255,0.03)] px-2 py-1 text-lg leading-none transition hover:scale-110 hover:border-[rgba(201,162,39,0.5)] hover:bg-[rgba(201,162,39,0.12)] active:scale-95"
+              title="Send reaction"
+            >
+              {em}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:w-[344px]">
+        {/* Wager — real-money-style betting, platform-managed (not for bot games) */}
+        {!lobby.vsBot && lobby.code && (
+          <WagerPanel
+            gameCode={lobby.code}
+            myUserId={session?.user?.id as number | undefined}
+            amPlayer={lobby.side === "w" || lobby.side === "b"}
+          />
+        )}
+
         {/* Players + whose turn */}
         <div
           className="glass-dark rounded-2xl p-3"

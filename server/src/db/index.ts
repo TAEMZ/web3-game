@@ -14,10 +14,6 @@ export const db = new pg.Pool({
   connectionTimeoutMillis: 10000, // Return error after 10 seconds (increased for slow connections)
 });
 
-db.on("error", (err) => {
-  console.error("Postgres pool error:", err.message);
-});
-
 export const INIT_TABLES = /* sql */ `
     CREATE TABLE IF NOT EXISTS "user" (
         id SERIAL PRIMARY KEY,
@@ -46,6 +42,10 @@ export const INIT_TABLES = /* sql */ `
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_ip VARCHAR(64);
+    -- Platform-custodial wallet key (TESTNET demo only, no real value): lets the
+    -- platform stake/settle wagers on the player's behalf so players never touch
+    -- a wallet or pay gas.
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS custodial_pk VARCHAR(80);
 
     CREATE TABLE IF NOT EXISTS "report" (
         id SERIAL PRIMARY KEY,
@@ -67,6 +67,61 @@ export const INIT_TABLES = /* sql */ `
         reason TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Wager (staked) matches settled through the ArenaEscrow contract on-chain.
+    CREATE TABLE IF NOT EXISTS "wager" (
+        id SERIAL PRIMARY KEY,
+        game_code VARCHAR(16) UNIQUE,
+        match_id INTEGER,                    -- on-chain ArenaEscrow match id
+        stake NUMERIC NOT NULL,              -- whole ARENA each side stakes
+        p1_user_id INT,
+        p1_wallet VARCHAR(64),
+        p2_user_id INT,
+        p2_wallet VARCHAR(64),
+        state VARCHAR(16) DEFAULT 'open',    -- open | funded | settled | cancelled
+        winner_wallet VARCHAR(64),
+        settle_tx VARCHAR(80),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_wager_match ON "wager"(match_id);
+
+    -- Token top-ups: player pays (off-chain, fiat/testnet), admin verifies the
+    -- amount and releases (mints) ARENA to the player's wallet. Repeatable, no expiry.
+    CREATE TABLE IF NOT EXISTS "deposit" (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES "user",
+        user_name VARCHAR(64),
+        amount NUMERIC NOT NULL,             -- whole ARENA to release
+        method VARCHAR(32),                  -- e.g. bank / telebirr / cash
+        reference TEXT,                      -- payment reference the player provides
+        wallet VARCHAR(64),                  -- destination wallet for the mint
+        status VARCHAR(16) DEFAULT 'pending',-- pending | approved | rejected
+        mint_tx VARCHAR(80),
+        reviewed_by VARCHAR(64),
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_deposit_status ON "deposit"(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_deposit_user ON "deposit"(user_id);
+
+    -- Withdrawals (cash-out): player converts ARENA back to birr. Admin pays the
+    -- birr off-chain and marks it paid. Amount/birr snapshot recorded at request.
+    CREATE TABLE IF NOT EXISTS "withdrawal" (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES "user",
+        user_name VARCHAR(64),
+        amount NUMERIC NOT NULL,             -- ARENA to cash out
+        usd NUMERIC,
+        birr NUMERIC,
+        wallet VARCHAR(64),
+        payout_to TEXT,                      -- where the player wants the birr (phone/bank)
+        status VARCHAR(16) DEFAULT 'pending',-- pending | paid | rejected
+        reviewed_by VARCHAR(64),
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_withdrawal_status ON "withdrawal"(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_withdrawal_user ON "withdrawal"(user_id);
 
     -- Performance indexes
     CREATE INDEX IF NOT EXISTS idx_game_white_id ON "game"(white_id);

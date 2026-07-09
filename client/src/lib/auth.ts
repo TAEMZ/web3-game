@@ -48,9 +48,9 @@ export const register = async (name: string, password: string, email?: string) =
         if (res.status === 201) {
             const user: User = await res.json();
             return user;
-        } else {
+        } else if (res.status === 409) {
             const { message } = await res.json();
-            return message || "Registration failed";
+            return message as string;
         }
     } catch (err) {
         console.error(err);
@@ -70,9 +70,9 @@ export const login = async (name: string, password: string) => {
         if (res.status === 200) {
             const user: User = await res.json();
             return user;
-        } else {
+        } else if (res.status === 404 || res.status === 401) {
             const { message } = await res.json();
-            return message || "Login failed";
+            return message as string;
         }
     } catch (err) {
         console.error(err);
@@ -133,13 +133,9 @@ export const updateUser = async (name?: string, email?: string, password?: strin
         if (res.status === 200) {
             const user: User = await res.json();
             return user;
-        } else {
-            try {
-                const { message } = await res.json();
-                return message || "Something went wrong";
-            } catch {
-                return "Something went wrong";
-            }
+        } else if (res.status === 409) {
+            const { message } = await res.json();
+            return message as string;
         }
     } catch (err) {
         console.error(err);

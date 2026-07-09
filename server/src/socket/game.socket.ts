@@ -88,13 +88,12 @@ export async function leaveLobby(this: Socket, reason?: DisconnectReason, code?:
         console.log(`leaveLobby: room size is ${this.rooms.size}, aborting...`);
         return;
     }
-    const gameCode = code || (this.rooms.size === 2 ? Array.from(this.rooms)[1] : undefined);
     const game = activeGames.find(
         (g) =>
-            (gameCode && g.code === gameCode) ||
-            (g.black?.id === this.request.session.user.id) ||
-            (g.white?.id === this.request.session.user.id) ||
-            g.observers?.some((o) => o.id === this.request.session.user.id)
+            g.code === (code || this.rooms.size === 2 ? Array.from(this.rooms)[1] : 0) ||
+            (g.black?.connected && g.black?.id === this.request.session.user.id) ||
+            (g.white?.connected && g.white?.id === this.request.session.user.id) ||
+            g.observers?.find((o) => this.request.session.user.id === o.id)
     );
 
     if (game) {
@@ -326,6 +325,20 @@ export async function chat(this: Socket, message: string) {
     this.to(Array.from(this.rooms)[1]).emit("chat", {
         author: this.request.session.user,
         message
+    });
+}
+
+// Quick emote reactions during a game. Only a fixed whitelist is relayed (so the
+// channel can't be abused to send arbitrary strings). Broadcast to the rest of
+// the room; the sender renders their own emote locally on click.
+export const EMOTES = ["👍", "😂", "😮", "😢", "😡", "🎉", "🔥", "👏", "🤝", "😎", "♟️", "💀"];
+
+export async function emote(this: Socket, key: string) {
+    const room = Array.from(this.rooms)[1];
+    if (!room || !EMOTES.includes(key)) return;
+    this.to(room).emit("emote", {
+        key,
+        from: this.request.session.user?.name || "Player"
     });
 }
 

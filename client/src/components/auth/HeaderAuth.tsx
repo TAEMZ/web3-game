@@ -16,8 +16,8 @@ export default function HeaderAuth() {
     session?.setUser(null);
   }
 
-  // session still loading — render nothing to avoid flicker
-  if (user === undefined) return null;
+  // session still loading (initial empty object) — render nothing to avoid flicker
+  if (user && Object.keys(user).length === 0) return null;
 
   if (!user?.id) {
     return (

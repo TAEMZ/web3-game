@@ -22,6 +22,7 @@ export function initSocket(
             winnerSide?: "white" | "black" | "draw";
             gameId: number;
         }) => void;
+        onEmote?: (payload: { key: string; from: string }) => void;
     }
 ) {
     socket.on("connect", () => {
@@ -31,6 +32,10 @@ export function initSocket(
 
     socket.on("chat", (message: Message) => {
         actions.addMessage(message);
+    });
+
+    socket.on("emote", (payload: { key: string; from: string }) => {
+        actions.onEmote?.(payload);
     });
 
     socket.on("receivedLatestGame", (latestGame: Game) => {

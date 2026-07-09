@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { SessionContext } from "@/context/session";
 import { useContext, useState } from "react";
 import { updateUser } from "@/lib/auth";
-import WalletButton from "@/components/wallet/WalletButton";
 
 export default function Settings() {
   const session = useContext(SessionContext);
@@ -84,57 +83,23 @@ export default function Settings() {
         >
           <h2 className="font-display text-xl font-bold text-[#E8C040] mb-4">Web3 Features</h2>
 
-          {hasWallet ? (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-xl bg-[rgba(26,107,63,0.15)] border border-[rgba(26,107,63,0.3)] p-4">
-                <div className="text-2xl">✅</div>
-                <div className="flex-1">
-                  <p className="font-semibold text-[#5fc88f]">Wallet Connected</p>
-                  <p className="text-xs text-[rgba(216,204,176,0.6)] mt-1 font-mono">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.2)] p-4">
+              <div className="text-2xl">🛡️</div>
+              <div className="flex-1">
+                <p className="font-semibold text-[#E8C040]">Wallet managed for you</p>
+                <p className="text-xs text-[rgba(216,204,176,0.6)] mt-1">
+                  The platform holds a wallet for you automatically — no setup, no gas fees, nothing to
+                  connect. Your ARENA balance, rewards, and wagers all settle on-chain through it.
+                </p>
+                {hasWallet && (
+                  <p className="text-xs text-[rgba(216,204,176,0.5)] mt-2 font-mono break-all">
                     {user.walletAddress}
                   </p>
-                  <p className="text-xs text-[rgba(216,204,176,0.5)] mt-2">
-                    You have access to rewards, NFT badges, and staked matches
-                  </p>
-                </div>
+                )}
               </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-xl bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.2)] p-4">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="text-2xl">🔓</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-[#E8C040]">Unlock Web3 Features</p>
-                    <p className="text-xs text-[rgba(216,204,176,0.6)] mt-1">
-                      Connect your wallet to access the full arena experience
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-2 text-xs text-[rgba(216,204,176,0.7)]">
-                    <span>💰</span>
-                    <span>Earn token rewards</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[rgba(216,204,176,0.7)]">
-                    <span>🏆</span>
-                    <span>Collect NFT badges</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[rgba(216,204,176,0.7)]">
-                    <span>⚔️</span>
-                    <span>Play staked matches</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[rgba(216,204,176,0.7)]">
-                    <span>🎯</span>
-                    <span>On-chain records</span>
-                  </div>
-                </div>
-
-                <WalletButton />
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Account Settings Section */}
@@ -194,7 +159,7 @@ export default function Settings() {
                   id="updatePassword"
                   name="updatePassword"
                   placeholder="Leave blank to keep current"
-                  minLength={6}
+                  minLength={3}
                 />
               </div>
 
