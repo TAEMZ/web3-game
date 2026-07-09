@@ -88,12 +88,13 @@ export async function leaveLobby(this: Socket, reason?: DisconnectReason, code?:
         console.log(`leaveLobby: room size is ${this.rooms.size}, aborting...`);
         return;
     }
+    const gameCode = code || (this.rooms.size === 2 ? Array.from(this.rooms)[1] : undefined);
     const game = activeGames.find(
         (g) =>
-            g.code === (code || this.rooms.size === 2 ? Array.from(this.rooms)[1] : 0) ||
-            (g.black?.connected && g.black?.id === this.request.session.user.id) ||
-            (g.white?.connected && g.white?.id === this.request.session.user.id) ||
-            g.observers?.find((o) => this.request.session.user.id === o.id)
+            (gameCode && g.code === gameCode) ||
+            (g.black?.id === this.request.session.user.id) ||
+            (g.white?.id === this.request.session.user.id) ||
+            g.observers?.some((o) => o.id === this.request.session.user.id)
     );
 
     if (game) {
