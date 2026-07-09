@@ -309,8 +309,8 @@ export const updateUser = async (req: Request, res: Response) => {
 
         let password: string | undefined = undefined;
         if (req.body.password) {
-            if (typeof req.body.password !== "string" || req.body.password.length > 72) {
-                res.status(400).json({ message: "Invalid password format" });
+            if (typeof req.body.password !== "string" || req.body.password.length > 72 || req.body.password.length < 6) {
+                res.status(400).json({ message: req.body.password.length < 6 ? "Password must be at least 6 characters" : "Invalid password format" });
                 return;
             }
             password = await hash(req.body.password);

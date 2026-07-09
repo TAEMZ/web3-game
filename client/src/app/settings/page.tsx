@@ -194,7 +194,7 @@ export default function Settings() {
                   id="updatePassword"
                   name="updatePassword"
                   placeholder="Leave blank to keep current"
-                  minLength={3}
+                  minLength={6}
                 />
               </div>
 
