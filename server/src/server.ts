@@ -19,14 +19,18 @@ const app = express();
 const server = createServer(app);
 
 // database
-await db.connect();
-db.query(INIT_TABLES, (err) => {
-    if (err) {
-        console.error(err);
-    } else {
-        console.log("Tables initialized");
-    }
-});
+try {
+    await db.connect();
+    db.query(INIT_TABLES, (err) => {
+        if (err) {
+            console.error(err);
+        } else {
+            console.log("Tables initialized");
+        }
+    });
+} catch (e) {
+    console.error("DB connection error:", e);
+}
 
 // middleware
 app.use(cors(corsConfig));

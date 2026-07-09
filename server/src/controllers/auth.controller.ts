@@ -32,10 +32,10 @@ export const guestSession = async (req: Request, res: Response) => {
         }
         const name = xss(req.body.name);
 
-        const pattern = /^[A-Za-z0-9]+$/;
+        const pattern = /^[A-Za-z0-9]{3,24}$/;
 
-        if (!pattern.test(name)) {
-            res.status(400).end();
+        if (!name || !pattern.test(name)) {
+            res.status(400).json({ message: "Invalid username format" });
             return;
         }
 
@@ -106,14 +106,20 @@ export const registerUser = async (req: Request, res: Response) => {
             return;
         }
 
-        const name = xss(req.body.name);
-        const email = xss(req.body.email);
-        const password = await hash(req.body.password);
+        const name = xss(req.body.name || "");
+        const email = xss(req.body.email || "");
+        let rawPassword = req.body.password;
+        
+        if (typeof rawPassword !== "string" || rawPassword.length < 6 || rawPassword.length > 72) {
+            res.status(400).json({ message: "Invalid password format or length" });
+            return;
+        }
+        const password = await hash(rawPassword);
 
-        const pattern = /^[A-Za-z0-9]+$/;
+        const pattern = /^[A-Za-z0-9]{3,24}$/;
 
-        if (!pattern.test(name)) {
-            res.status(400).end();
+        if (!name || !pattern.test(name)) {
+            res.status(400).json({ message: "Invalid username format" });
             return;
         }
 
@@ -181,8 +187,13 @@ export const loginUser = async (req: Request, res: Response) => {
             return;
         }
 
-        const nameOrEmail = xss(req.body.name);
+        const nameOrEmail = xss(req.body.name || "");
         const password = req.body.password;
+
+        if (typeof password !== "string" || !password) {
+            res.status(400).json({ message: "Missing or invalid password" });
+            return;
+        }
 
         const ip = clientIp(req);
         if (await isIpBanned(ip)) {
@@ -276,13 +287,13 @@ export const updateUser = async (req: Request, res: Response) => {
         }
 
         const name = xss(req.body.name || req.session.user.name);
-        const pattern = /^[A-Za-z0-9]+$/;
-        if (!pattern.test(name)) {
-            res.status(400).end();
+        const pattern = /^[A-Za-z0-9]{3,24}$/;
+        if (!name || !pattern.test(name)) {
+            res.status(400).json({ message: "Invalid username format" });
             return;
         }
 
-        const email = xss(req.body.email || req.session.user.email);
+        const email = xss(req.body.email || req.session.user.email || "");
         const compareEmail = email || name;
 
         const duplicateUsers = await UserModel.findByNameEmail({ name, email: compareEmail });
@@ -298,6 +309,10 @@ export const updateUser = async (req: Request, res: Response) => {
 
         let password: string | undefined = undefined;
         if (req.body.password) {
+            if (typeof req.body.password !== "string" || req.body.password.length > 72) {
+                res.status(400).json({ message: "Invalid password format" });
+                return;
+            }
             password = await hash(req.body.password);
         }
 

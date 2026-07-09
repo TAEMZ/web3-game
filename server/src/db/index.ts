@@ -14,6 +14,10 @@ export const db = new pg.Pool({
   connectionTimeoutMillis: 10000, // Return error after 10 seconds (increased for slow connections)
 });
 
+db.on("error", (err) => {
+  console.error("Postgres pool error:", err.message);
+});
+
 export const INIT_TABLES = /* sql */ `
     CREATE TABLE IF NOT EXISTS "user" (
         id SERIAL PRIMARY KEY,
