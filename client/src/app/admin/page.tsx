@@ -54,7 +54,7 @@ export default function AdminPage() {
   const session = useContext(SessionContext);
   const router = useRouter();
   const user = session?.user;
-  const checking = user === undefined || (!!user && Object.keys(user).length === 0);
+  const checking = user === undefined;
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);

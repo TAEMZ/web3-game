@@ -23,7 +23,7 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   const session = useContext(SessionContext);
   const router = useRouter();
   const user = session?.user;
-  const isLoading = !!user && Object.keys(user).length === 0;
+  const isLoading = user === undefined;
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);

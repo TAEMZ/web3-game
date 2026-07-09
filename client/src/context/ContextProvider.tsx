@@ -10,7 +10,7 @@ import { fetchSession } from "@/lib/auth";
 import { SessionContext } from "./session";
 
 export default function ContextProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>({});
+  const [user, setUser] = useState<User | null | undefined>(undefined);
 
   async function getSession() {
     const user = await fetchSession();
