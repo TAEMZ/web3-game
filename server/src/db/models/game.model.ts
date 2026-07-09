@@ -63,7 +63,7 @@ export const save = async (game: Game) => {
         return {
             id: res.rows[0].id,
             winner: res.rows[0].winner,
-            endReason: res.rows[0].reason,
+            endReason: res.rows[0].end_reason,
             pgn: res.rows[0].pgn,
             white: {
                 id: res.rows[0].white_id || undefined,
