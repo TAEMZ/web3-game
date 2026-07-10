@@ -161,25 +161,19 @@ export default function JitsiVideo({
         </div>
       )}
 
-      {/* Active call: portaled to <body> (so no transformed/blurred ancestor offsets
-          the fixed overlay) — full-screen on phones, a big landscape window on desktop. */}
+      {/* Active call: a floating corner window (portaled to <body>) so the board stays
+          visible — it doesn't cover the game. */}
       {active &&
         typeof document !== "undefined" &&
         createPortal(
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-0 sm:p-4"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="relative h-full w-full overflow-hidden bg-black sm:h-[90vh] sm:w-[95vw] sm:max-w-[1400px] sm:rounded-2xl">
-              <div ref={containerRef} className="h-full w-full" />
-              <button
-                onClick={stop}
-                className="absolute right-3 top-3 z-10 rounded-full bg-[rgba(184,24,24,0.92)] px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:bg-[rgba(184,24,24,1)]"
-              >
-                Leave call
-              </button>
-            </div>
+          <div className="fixed bottom-3 right-3 z-50 w-[min(92vw,440px)] overflow-hidden rounded-2xl border border-[rgba(201,162,39,0.35)] bg-black shadow-2xl">
+            <div ref={containerRef} className="h-[min(50vh,320px)] w-full" />
+            <button
+              onClick={stop}
+              className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[rgba(184,24,24,0.92)] px-3 py-1 text-xs font-semibold text-white shadow-lg transition hover:bg-[rgba(184,24,24,1)]"
+            >
+              Leave call
+            </button>
           </div>,
           document.body
         )}

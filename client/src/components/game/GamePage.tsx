@@ -589,10 +589,13 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
     socket.emit("claimAbandoned", type);
   }
 
+  // Matches the server's resign rule (needs a started game with a move played) — so
+  // the "leave & resign" guard only fires when a resign will actually be accepted.
   const gameActive =
     lobby.side !== "s" &&
     !lobby.endReason &&
     !lobby.winner &&
+    !!lobby.pgn &&
     !!lobby.white?.id &&
     !!lobby.black?.id;
 
