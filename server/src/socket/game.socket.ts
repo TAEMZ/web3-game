@@ -5,38 +5,40 @@ import type { DisconnectReason, Socket } from "socket.io";
 import GameModel, { activeGames } from "../db/models/game.model.js";
 import { getBotMove } from "../bot/index.js";
 import { io } from "../server.js";
+import { withKeyLock } from "../util/locks.js";
 
 // TODO: clean up
 
 // Detect the game-ending condition from a finished position, persist it, tell
 // the room, and drop the game from memory. Shared by human and bot moves.
 async function concludeGame(game: Game, chess: Chess) {
-    let reason: Game["endReason"];
-    if (chess.isCheckmate()) reason = "checkmate";
-    else if (chess.isStalemate()) reason = "stalemate";
-    else if (chess.isThreefoldRepetition()) reason = "repetition";
-    else if (chess.isInsufficientMaterial()) reason = "insufficient";
-    else if (chess.isDraw()) reason = "draw";
+    return withKeyLock(game.code as string, async () => {
+        let reason: Game["endReason"];
+        if (chess.isCheckmate()) reason = "checkmate";
+        else if (chess.isStalemate()) reason = "stalemate";
+        else if (chess.isThreefoldRepetition()) reason = "repetition";
+        else if (chess.isInsufficientMaterial()) reason = "insufficient";
+        else if (chess.isDraw()) reason = "draw";
 
-    // After a checkmating move it is the mated side's turn to move.
-    const winnerSide =
-        reason === "checkmate" ? (chess.turn() === "w" ? "black" : "white") : undefined;
-    const winnerName =
-        winnerSide === "white"
-            ? game.white?.name
-            : winnerSide === "black"
-              ? game.black?.name
-              : undefined;
+        const winnerSide =
+            reason === "checkmate" ? (chess.turn() === "w" ? "black" : "white") : undefined;
+        const winnerName =
+            winnerSide === "white"
+                ? game.white?.name
+                : winnerSide === "black"
+                  ? game.black?.name
+                  : undefined;
 
-    game.winner = reason === "checkmate" ? winnerSide : "draw";
-    game.endReason = reason;
+        game.winner = reason === "checkmate" ? winnerSide : "draw";
+        game.endReason = reason;
 
-    const saved = (await GameModel.save(game)) as Game;
-    game.id = saved.id;
-    io.to(game.code as string).emit("gameOver", { reason, winnerName, winnerSide, id: saved.id });
+        const saved = (await GameModel.save(game)) as Game;
+        game.id = saved.id;
+        io.to(game.code as string).emit("gameOver", { reason, winnerName, winnerSide, id: saved.id });
 
-    if (game.timeout) clearTimeout(game.timeout);
-    activeGames.splice(activeGames.indexOf(game), 1);
+        if (game.timeout) clearTimeout(game.timeout);
+        activeGames.splice(activeGames.indexOf(game), 1);
+    });
 }
 
 export async function joinLobby(this: Socket, gameCode: string) {
@@ -121,20 +123,20 @@ export async function leaveLobby(this: Socket, reason?: DisconnectReason, code?:
             }
             game.timeout = Number(
                 setTimeout(async () => {
-                    // Save the game before removing it — this triggers wager settlement
-                    // for wager-mode games, preventing tokens from being locked forever.
-                    if (game.pgn && !game.winner && game.white && game.black) {
-                        game.winner = "draw";
-                        game.endReason = "abandoned";
-                    }
-                    if (game.white?.id || game.black?.id) {
-                        try {
-                            await GameModel.save(game);
-                        } catch (err) {
-                            console.error("[socket] timeout save failed:", (err as Error).message);
+                    await withKeyLock(game.code as string, async () => {
+                        if (game.pgn && !game.winner && game.white && game.black) {
+                            game.winner = "draw";
+                            game.endReason = "abandoned";
                         }
-                    }
-                    activeGames.splice(activeGames.indexOf(game), 1);
+                        if (game.white?.id || game.black?.id) {
+                            try {
+                                await GameModel.save(game);
+                            } catch (err) {
+                                console.error("[socket] timeout save failed:", (err as Error).message);
+                            }
+                        }
+                        activeGames.splice(activeGames.indexOf(game), 1);
+                    });
                 }, timeout)
             );
         } else {
@@ -173,30 +175,32 @@ export async function claimAbandoned(this: Socket, type: "win" | "draw") {
         return;
     }
 
-    game.endReason = "abandoned";
+    await withKeyLock(game.code as string, async () => {
+        game.endReason = "abandoned";
 
-    if (type === "draw") {
-        game.winner = "draw";
-    } else if (game.white && game.white?.id === this.request.session.user.id) {
-        game.winner = "white";
-    } else if (game.black && game.black?.id === this.request.session.user.id) {
-        game.winner = "black";
-    }
+        if (type === "draw") {
+            game.winner = "draw";
+        } else if (game.white && game.white?.id === this.request.session.user.id) {
+            game.winner = "white";
+        } else if (game.black && game.black?.id === this.request.session.user.id) {
+            game.winner = "black";
+        }
 
-    const { id } = (await GameModel.save(game)) as Game;
-    game.id = id;
+        const { id } = (await GameModel.save(game)) as Game;
+        game.id = id;
 
-    const gameOver = {
-        reason: game.endReason,
-        winnerName: this.request.session.user.name,
-        winnerSide: game.winner === "draw" ? undefined : game.winner,
-        id
-    };
+        const gameOver = {
+            reason: game.endReason,
+            winnerName: this.request.session.user.name,
+            winnerSide: game.winner === "draw" ? undefined : game.winner,
+            id
+        };
 
-    io.to(game.code as string).emit("gameOver", gameOver);
+        io.to(game.code as string).emit("gameOver", gameOver);
 
-    if (game.timeout) clearTimeout(game.timeout);
-    activeGames.splice(activeGames.indexOf(game), 1);
+        if (game.timeout) clearTimeout(game.timeout);
+        activeGames.splice(activeGames.indexOf(game), 1);
+    });
 }
 
 export async function resign(this: Socket) {
@@ -213,31 +217,32 @@ export async function resign(this: Socket) {
         return;
     }
 
-    game.endReason = "resignation";
+    await withKeyLock(game.code as string, async () => {
+        game.endReason = "resignation";
 
-    // Set the opponent as the winner
-    if (game.white && game.white?.id === this.request.session.user.id) {
-        game.winner = "black";
-    } else if (game.black && game.black?.id === this.request.session.user.id) {
-        game.winner = "white";
-    }
+        if (game.white && game.white?.id === this.request.session.user.id) {
+            game.winner = "black";
+        } else if (game.black && game.black?.id === this.request.session.user.id) {
+            game.winner = "white";
+        }
 
-    const winnerName = game.winner === "white" ? game.white?.name : game.black?.name;
+        const winnerName = game.winner === "white" ? game.white?.name : game.black?.name;
 
-    const { id } = (await GameModel.save(game)) as Game;
-    game.id = id;
+        const { id } = (await GameModel.save(game)) as Game;
+        game.id = id;
 
-    const gameOver = {
-        reason: game.endReason,
-        winnerName,
-        winnerSide: game.winner,
-        id
-    };
+        const gameOver = {
+            reason: game.endReason,
+            winnerName,
+            winnerSide: game.winner,
+            id
+        };
 
-    io.to(game.code as string).emit("gameOver", gameOver);
+        io.to(game.code as string).emit("gameOver", gameOver);
 
-    if (game.timeout) clearTimeout(game.timeout);
-    activeGames.splice(activeGames.indexOf(game), 1);
+        if (game.timeout) clearTimeout(game.timeout);
+        activeGames.splice(activeGames.indexOf(game), 1);
+    });
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -301,6 +306,13 @@ export async function sendMove(this: Socket, m: { from: string; to: string; prom
 export async function joinAsPlayer(this: Socket) {
     const game = activeGames.find((g) => g.code === Array.from(this.rooms)[1]);
     if (!game) return;
+
+    // Wager games are limited to exactly 2 players — no spectators can join as players.
+    if (game.mode === "wager" && game.white && game.black) {
+        this.emit("receivedLatestGame", game);
+        return;
+    }
+
     const user = game.observers?.find((o) => o.id === this.request.session.user.id);
     if (!game.white) {
         const sessionUser = {
