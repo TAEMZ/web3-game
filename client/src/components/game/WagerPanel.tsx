@@ -99,7 +99,7 @@ export default function WagerPanel({
     setError(null);
     if (!account) return setError("Connect your wallet (top-right) to bet.");
     const s = Number(stake);
-    if (!(s > 0)) return setError("Enter a stake greater than 0.");
+    if (!Number.isInteger(s) || s <= 0) return setError("Enter a whole number greater than 0.");
     setBusy(true);
     let reserved = false;
     let activated = false;
