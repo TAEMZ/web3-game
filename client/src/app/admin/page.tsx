@@ -117,6 +117,7 @@ export default function AdminPage() {
   const [deposits, setDeposits] = useState<Deposit[] | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[] | null>(null);
   const [subs, setSubs] = useState<SubReq[] | null>(null);
+  const [wagers, setWagers] = useState<Wager[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
