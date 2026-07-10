@@ -53,6 +53,13 @@ export default function WagerPanel({
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  const stakeNum = Number(stake) || 0;
+  const totalPot = stakeNum * 2;
+  const feeAmt = Math.floor(totalPot * HOUSE_FEE_PERCENT / 100);
+  const netWin = totalPot - feeAmt;
 
   const fetchWager = useCallback(async () => {
     try {
@@ -70,6 +77,18 @@ export default function WagerPanel({
     const t = setInterval(fetchWager, 4000);
     return () => clearInterval(t);
   }, [fetchWager]);
+
+  // Fetch on-chain ARENA balance when wallet is connected
+  useEffect(() => {
+    if (!account) return;
+    readContract({
+      contract: tokenContract,
+      method: "function balanceOf(address) view returns (uint256)",
+      params: [account.address],
+    })
+      .then((bal) => setBalance(Number(bal / BigInt("1" + "0".repeat(18)))))
+      .catch(() => {});
+  }, [account?.address]);
 
   async function ensureBalance(stakeWei: bigint): Promise<boolean> {
     const bal = (await readContract({
@@ -97,6 +116,7 @@ export default function WagerPanel({
 
   async function create() {
     setError(null);
+    setConfirming(false);
     if (!account) return setError("Connect your wallet (top-right) to bet.");
     const s = Number(stake);
     if (!Number.isInteger(s) || s <= 0) return setError("Enter a whole number greater than 0.");
@@ -225,19 +245,66 @@ export default function WagerPanel({
               Connect your wallet (top-right) to place a bet.
             </p>
           ) : (
-            <div className="flex gap-2">
-              <input
-                type="number"
-                min={1}
-                value={stake}
-                onChange={(e) => setStake(e.target.value)}
-                placeholder="stake"
-                className="w-24 rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-2.5 py-1.5 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
-              />
-              <button onClick={create} className="btn-gold flex-1 text-sm">
-                Bet ARENA
-              </button>
-            </div>
+            <>
+              {balance !== null && (
+                <p className="mb-2 text-xs text-[rgba(216,204,176,0.4)]">
+                  Balance: <span className="font-semibold text-[#E8C040]">{balance} ARENA</span>
+                </p>
+              )}
+
+              {!confirming ? (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={stake}
+                    onChange={(e) => { setStake(e.target.value); setConfirming(false); }}
+                    placeholder="stake"
+                    className="w-24 rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-2.5 py-1.5 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+                  />
+                  <button
+                    onClick={() => {
+                      const s = Number(stake);
+                      if (!Number.isInteger(s) || s <= 0) return setError("Enter a whole number greater than 0.");
+                      setConfirming(true);
+                    }}
+                    className="btn-gold flex-1 text-sm"
+                  >
+                    Review Bet
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-[rgba(201,162,39,0.25)] bg-[rgba(0,0,0,0.25)] p-3 space-y-2">
+                  <p className="text-xs font-semibold text-[#E8C040]">Confirm Your Bet</p>
+                  <div className="space-y-1 text-xs text-[rgba(216,204,176,0.7)]">
+                    <div className="flex justify-between">
+                      <span>Your stake</span>
+                      <span className="text-[#e8dcc0]">{stakeNum} ARENA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total pot (2× stake)</span>
+                      <span className="text-[#e8dcc0]">{totalPot} ARENA</span>
+                    </div>
+                    <div className="flex justify-between text-[rgba(216,204,176,0.5)]">
+                      <span>Platform fee ({HOUSE_FEE_PERCENT}%)</span>
+                      <span>-{feeAmt} ARENA</span>
+                    </div>
+                    <div className="border-t border-[rgba(201,162,39,0.15)] pt-1 flex justify-between font-semibold text-[#4ade80]">
+                      <span>You win</span>
+                      <span>{netWin} ARENA</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => setConfirming(false)} className="flex-1 rounded-lg border border-[rgba(201,162,39,0.2)] px-3 py-1.5 text-xs text-[rgba(216,204,176,0.6)] hover:bg-[rgba(201,162,39,0.08)]">
+                      Back
+                    </button>
+                    <button onClick={create} className="btn-gold flex-1 text-sm">
+                      Confirm &amp; Stake
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
