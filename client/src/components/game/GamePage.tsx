@@ -31,6 +31,8 @@ import { syncPgn, syncSide } from "./utils";
 import JitsiVideo from "./JitsiVideo";
 import GameOverModal from "./GameOverModal";
 import ReportModal from "./ReportModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useNavGuard } from "@/context/navGuard";
 import WagerPanel from "./WagerPanel";
 import BoardThemePicker from "./BoardThemePicker";
 import { ethiopianPieces } from "./pieces";
@@ -47,6 +49,8 @@ const socket = io(API_URL || window.location.origin, { withCredentials: true, au
 
 export default function GamePage({ initialLobby }: { initialLobby: Game }) {
   const session = useContext(SessionContext);
+  const { setGuard } = useNavGuard();
+  const [showResignConfirm, setShowResignConfirm] = useState(false);
 
   const [lobby, updateLobby] = useReducer(lobbyReducer, {
     ...initialLobby,
@@ -585,21 +589,32 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
     socket.emit("claimAbandoned", type);
   }
 
+  const gameActive =
+    lobby.side !== "s" &&
+    !lobby.endReason &&
+    !lobby.winner &&
+    !!lobby.pgn &&
+    !!lobby.white?.id &&
+    !!lobby.black?.id;
+
+  // While a game is live, confirm — and resign — before the user navigates away, so an
+  // abandoned game doesn't leave the opponent (or the board) stuck.
+  useEffect(() => {
+    if (gameActive) {
+      setGuard({
+        message: "Leaving now will resign the game and count as a loss. Leave anyway?",
+        onConfirm: () => socket.emit("resign")
+      });
+    } else {
+      setGuard(null);
+    }
+    return () => setGuard(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameActive]);
+
   function resignGame() {
-    if (
-      lobby.side === "s" ||
-      lobby.endReason ||
-      lobby.winner ||
-      !lobby.pgn ||
-      !lobby.white?.id ||
-      !lobby.black?.id
-    ) {
-      return;
-    }
-    const confirmed = window.confirm("Are you sure you want to resign? This will count as a loss.");
-    if (confirmed) {
-      socket.emit("resign");
-    }
+    if (!gameActive) return;
+    setShowResignConfirm(true);
   }
 
   // The human opponent (if any) — reportable when it's a registered player, not a bot.
@@ -609,6 +624,19 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-4 py-6 lg:flex-row lg:items-start lg:justify-center">
+      <ConfirmDialog
+        open={showResignConfirm}
+        title="Resign the game?"
+        message="This counts as a loss and docks a small ARENA penalty. Are you sure?"
+        confirmLabel="Resign"
+        cancelLabel="Keep playing"
+        danger
+        onConfirm={() => {
+          setShowResignConfirm(false);
+          socket.emit("resign");
+        }}
+        onCancel={() => setShowResignConfirm(false)}
+      />
       {showReport && opponent?.name && (
         <ReportModal
           reportedName={opponent.name}

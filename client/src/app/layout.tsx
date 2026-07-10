@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import { SITE_URL } from "@/lib/site";
 
 import ContextProvider from "@/context/ContextProvider";
+import NavGuardProvider from "@/context/navGuard";
 
 export const metadata = {
   title: "Chess Arena",
@@ -41,11 +42,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className="overflow-x-hidden">
       <body className="overflow-x-hidden">
         <ContextProvider>
-          <Header />
+          <NavGuardProvider>
+            <Header />
 
-          <main className="mx-auto flex min-h-[70vh] w-full max-w-6xl justify-center px-4">
-            {children}
-          </main>
+            <main className="mx-auto flex min-h-[70vh] w-full max-w-6xl justify-center px-4">
+              {children}
+            </main>
+          </NavGuardProvider>
         </ContextProvider>
 
         <Footer />
