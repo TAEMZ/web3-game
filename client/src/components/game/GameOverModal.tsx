@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { Game } from "@arena/types";
-import { API_URL } from "@/config";
+import { API_URL, HOUSE_FEE_PERCENT } from "@/config";
 
 type Outcome = "win" | "loss" | "draw" | "spectator";
 
@@ -88,6 +88,7 @@ export default function GameOverModal({
   const [balance, setBalance] = useState<number | null>(null);
   const [settling, setSettling] = useState(true);
   const [wagerStake, setWagerStake] = useState<number | null>(null);
+  const [wagerFee, setWagerFee] = useState<number>(0);
   const [wagerResult, setWagerResult] = useState<"won" | "lost" | "draw" | null>(null);
 
   useEffect(() => {
@@ -119,6 +120,7 @@ export default function GameOverModal({
             const w = (await wr.json()).wager;
             if (active && w && (w.state === "funded" || w.state === "settled")) {
               setWagerStake(Number(w.stake));
+              setWagerFee(Number(w.fee_amount || 0));
               if (w.state === "settled") {
                 if (!w.winner_wallet) setWagerResult("draw");
                 else if (myWallet && w.winner_wallet.toLowerCase() === myWallet.toLowerCase())
