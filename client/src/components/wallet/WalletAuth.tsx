@@ -15,17 +15,25 @@ export default function WalletAuth() {
 
   useEffect(() => {
     if (!account) return;
+    const user = session?.user;
+    // Wait until the session check has resolved (undefined = unchecked, {} = still
+    // loading) so a reconnected wallet can't act before we know who's signed in.
+    if (user === undefined) return;
+    if (user && Object.keys(user).length === 0) return;
+    // Admins don't use wallets. A stale wallet auto-reconnecting from a previous
+    // player must never bridge into (and hijack/merge) an admin session.
+    if (user?.is_admin) return;
     const address = account.address.toLowerCase();
-    if (session?.user?.walletAddress === address) return;
+    if (user?.walletAddress === address) return;
     if (busy.current) return;
     busy.current = true;
     (async () => {
-      const user = await walletLogin(address, (message) => account.signMessage({ message }));
-      if (user) session?.setUser(user);
+      const u = await walletLogin(address, (message) => account.signMessage({ message }));
+      if (u) session?.setUser(u);
       busy.current = false;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account?.address]);
+  }, [account?.address, session?.user]);
 
   return null;
 }

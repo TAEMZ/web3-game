@@ -81,6 +81,14 @@ const REASON_LABEL: Record<string, string> = {
   other: "Other",
 };
 
+// Top-up payments record the on-chain tx as "paid 0x…" in the reference — pull the
+// hash out for an explorer link, and show any human note without it.
+const txFromRef = (ref: string | null): string | null => ref?.match(/0x[0-9a-fA-F]{64}/)?.[0] ?? null;
+const refNote = (ref: string | null): string | null => {
+  const s = ref?.replace(/^paid\s+0x[0-9a-fA-F]{64}\s*(?:—\s*)?/, "").trim();
+  return s || null;
+};
+
 export default function AdminPage() {
   const session = useContext(SessionContext);
   const router = useRouter();
@@ -343,9 +351,19 @@ export default function AdminPage() {
                   </p>
                   <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-[rgba(216,204,176,0.5)]">
                     <span>method: <span className="text-[#d8ccb0]">{d.method || "—"}</span></span>
-                    <span>ref: <span className="text-[#d8ccb0]">{d.reference || "—"}</span></span>
+                    <span>ref: <span className="text-[#d8ccb0]">{refNote(d.reference) || "—"}</span></span>
                     {d.wallet && (
                       <span className="font-mono">→ {d.wallet.slice(0, 6)}…{d.wallet.slice(-4)}</span>
+                    )}
+                    {txFromRef(d.reference) && (
+                      <a
+                        href={`https://sepolia.etherscan.io/tx/${txFromRef(d.reference)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:text-[#E8C040]"
+                      >
+                        view payment
+                      </a>
                     )}
                   </p>
                 </div>
