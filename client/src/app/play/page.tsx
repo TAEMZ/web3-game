@@ -51,6 +51,15 @@ export default function PlayPlans() {
       .catch(() => {});
   }, []);
 
+  // This is the landing choice page — send admins to the console, and visitors
+  // with no session to login. Guests (string id) stay and can pick Casual.
+  useEffect(() => {
+    const u = session?.user;
+    if (u === undefined || (u && Object.keys(u).length === 0)) return; // still loading
+    if (u?.is_admin) router.replace("/admin");
+    else if (!u?.id) router.replace("/login");
+  }, [session?.user, router]);
+
   const loadSub = useCallback(async () => {
     if (!user?.id || typeof user.id !== "number") return;
     try {
@@ -71,7 +80,7 @@ export default function PlayPlans() {
   }, [loadSub]);
 
   function playCasual() {
-    router.push("/");
+    router.push("/casual");
   }
 
   async function createWager() {

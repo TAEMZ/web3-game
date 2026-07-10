@@ -270,16 +270,22 @@ export default function GameOverModal({
 
         <div className="flex flex-col gap-2">
           <a
-            href="/"
+            href="/casual"
             className="w-full rounded-lg py-3 text-center font-semibold text-[#1a0f0a] transition-transform hover:-translate-y-0.5"
             style={{ background: "linear-gradient(135deg,#e8c040,#c9a227 55%,#9a7a18)", boxShadow: "0 4px 18px rgba(201,162,39,0.35)" }}
           >
             Play Again
           </a>
+          <a
+            href="/"
+            className="w-full rounded-lg border border-[rgba(201,162,39,0.35)] bg-[rgba(201,162,39,0.08)] py-3 text-center font-semibold text-[#E8C040] transition-colors hover:bg-[rgba(201,162,39,0.18)]"
+          >
+            Back to Lobby
+          </a>
           {gameId ? (
             <a
               href={`/archive/${gameId}`}
-              className="w-full rounded-lg border border-[rgba(201,162,39,0.3)] bg-[rgba(201,162,39,0.08)] py-3 text-center font-semibold text-[#E8C040] transition-colors hover:bg-[rgba(201,162,39,0.18)]"
+              className="w-full rounded-lg py-2.5 text-center text-sm font-semibold text-[rgba(216,204,176,0.6)] transition-colors hover:text-[#E8C040]"
             >
               Review Game
             </a>

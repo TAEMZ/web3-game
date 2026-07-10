@@ -1,10 +1,7 @@
-import Dashboard from "@/components/home/Dashboard";
-import PublicGames from "@/components/home/PublicGames/PublicGames";
+import PlayPlans from "./play/page";
 
-export const revalidate = 0;
-
+// The landing page is the Casual-vs-Wager choice. Picking "Casual" goes to
+// /casual (the game hub); "Wager Arena" opens the pass/wager flow.
 export default function Home() {
-  // PublicGames is a server component (fetches on the server); Dashboard is a
-  // client gate that only shows it once the visitor is signed in.
-  return <Dashboard publicGames={<PublicGames />} />;
+  return <PlayPlans />;
 }
