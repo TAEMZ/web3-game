@@ -1,8 +1,11 @@
 # Chess Arena
 
 Web3 chess arena — full-rules online chess (live 1v1 + bot) with a wallet and social layer.
-Chess runs off-chain; the blockchain is only touched at login (wallet) and end-of-match
-(record result, rewards, escrow payout).
+Chess runs off-chain; the blockchain is only touched at login (wallet top-ups), end-of-match
+(rewards + achievement badges), and the wager escrow / exchange / subscription flows.
+
+> **Full technical reference:** see [`ARCHITECTURE.md`](./ARCHITECTURE.md) — contracts,
+> addresses, token economics, gas model, video chat, and the complete stack.
 
 ## Features
 
@@ -15,23 +18,23 @@ Chess runs off-chain; the blockchain is only touched at login (wallet) and end-o
 - Spectator mode
 
 ### 🔐 Authentication
-- Username/password accounts
+- Username/password accounts (argon2-hashed)
 - Guest play (stats not saved)
-- Wallet-based auth (MetaMask, Coinbase, etc.)
-- Social login (Google, Apple, Phone) via thirdweb
+- Wallet auth via **thirdweb in-app wallet** — Google / email social login → a
+  self-custodial wallet (no seed phrase, no browser extension); linked to the
+  account by a signed nonce
 
-### 💰 Web3 Rewards (Polygon Amoy Testnet)
-- **ARENA Tokens**: ERC-20 tokens earned from wins
-  - Win: +50 ARENA
-  - Draw: +10 ARENA
-- **Achievement NFTs**: Soul-bound badges for milestones
-  - 🎖️ First Victory
-  - 🥈 10 Wins
-  - 🥇 100 Wins
-  - ⭐ Perfect Week (coming soon)
-- Victory rewards modal with confetti
-- Rewards tracking page
-- On-chain game record storage
+### 💰 Web3 Economy (Ethereum Sepolia testnet, chainId 11155111)
+- **ARENA** (ERC-20, 18 decimals) — reward + utility token, 1B max supply
+  - Win: **+50 ARENA** · Draw: **+10 ARENA** (resign: −25, accounting)
+- **USDC / TestUSD** (ERC-20, 6 decimals) — demo "dollars"; **100 dripped on sign-in**
+- **Exchange** — swap USDC ↔ ARENA at a fixed **100 ARENA = 1 USDC** (ARENA ≈ $0.01)
+- **Subscription** — one-time **500 ARENA** unlocks wager mode
+- **Wager escrow** — both players stake equal ARENA, winner takes the pot
+- **Achievement NFTs** (soul-bound, on-chain SVG): 🎖️ First Victory (1 win) ·
+  🥈 Silver (10) · 🥇 Gold (100) · ⭐ Perfect Week (7 in a row)
+- Auto gas: players are topped up with a little Sepolia ETH so they never buy test-ETH
+- Victory rewards modal with confetti; rewards tracking page
 
 ### 🎨 UI/UX
 - Ethiopian-themed design (Adwa inspired)
@@ -69,16 +72,28 @@ Environment:
    ```
    NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_client_id_here
    ```
-3. Deploy smart contracts (see `contracts/README.md`)
-4. Update contract addresses in `client/src/lib/rewards.ts`
+3. Deploy the smart contracts to Sepolia (see `contracts/README.md`).
+4. Client addresses live in `client/src/lib/contracts.ts`; the server reads its
+   addresses + treasury key from `server/.env`:
+   ```
+   ARENA_TOKEN_ADDRESS=…      ARENA_ESCROW_ADDRESS=…
+   TEST_USD_ADDRESS=…         ARENA_EXCHANGE_ADDRESS=…   ARENA_NFT_ADDRESS=…
+   DEPLOYER_PRIVATE_KEY=…     RPC_URL=…   (treasury that mints/drips/settles)
+   SUBSCRIPTION_ARENA=500     USD_DRIP=100   USD_FLOOR=10
+   REWARD_WIN=50              REWARD_DRAW=10
+   PLAYER_GAS_ETH=0.004       PLAYER_GAS_FLOOR=0.0015
+   ```
+   Without the addresses/key, the web3 layer no-ops and balances are DB-simulated.
 
 ## Features Roadmap
 
+- [x] Staked / wager matches (ARENA escrow)
+- [x] AI opponent (Stockfish, skill 0–20)
+- [x] USDC ↔ ARENA exchange + one-time subscription
+- [x] Soul-bound achievement NFTs
 - [ ] Deploy contracts to mainnet
-- [ ] Staked matches (wager tokens)
 - [ ] Tournament system
 - [ ] ELO rating system
-- [ ] AI opponent
 - [ ] Mobile app
 - [ ] NFT marketplace
 - [ ] Governance tokens

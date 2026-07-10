@@ -245,9 +245,9 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
         </>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-2">
             {playerRemotes.length === 0 && (
-              <div className="col-span-2 flex aspect-video items-center justify-center rounded-lg bg-[rgba(9,21,16,0.7)] px-2 text-center text-[10px] leading-tight text-[rgba(216,204,176,0.5)]">
+              <div className="flex aspect-video items-center justify-center rounded-lg bg-[rgba(9,21,16,0.7)] px-2 text-center text-xs leading-tight text-[rgba(216,204,176,0.5)]">
                 Waiting for {isPlayer ? "your opponent" : "the players"} to turn on their camera…
               </div>
             )}
