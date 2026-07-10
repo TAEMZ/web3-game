@@ -29,6 +29,7 @@ const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || "make sure to change this!",
     resave: false,
     saveUninitialized: false,
+    unset: "destroy",
     name: "arena",
     proxy: true,
     cookie: {
