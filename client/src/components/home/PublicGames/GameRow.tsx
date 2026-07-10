@@ -2,7 +2,9 @@
 
 import { IconEye, IconSwords } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useContext, useTransition } from "react";
+
+import { SessionContext } from "@/context/session";
 
 // One live/open game in the lobby. Click to watch (both seats filled) or join
 // (an open seat). Navigating to the game auto-joins you as a spectator if it's
@@ -11,13 +13,23 @@ export default function GameRow({
   code,
   white,
   black,
+  whiteId,
+  blackId,
 }: {
   code: string;
   white?: string;
   black?: string;
+  whiteId?: string | number;
+  blackId?: string | number;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const session = useContext(SessionContext);
+
+  // Don't list the viewer's own in-progress game — you shouldn't "spectate" yourself.
+  const uid = session?.user?.id;
+  if (uid != null && (uid === whiteId || uid === blackId)) return null;
+
   const live = !!white && !!black;
 
   return (
