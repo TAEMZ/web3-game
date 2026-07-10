@@ -93,6 +93,12 @@ export const join = async (matchId: number, p2UserId: number, p2Wallet: string):
 };
 
 export const findByGameCode = async (gameCode: string): Promise<Wager | null> => {
+    // Auto-cancel stale "staking" reservations older than 5 minutes (the on-chain
+    // stake should have confirmed by then; if not, the user likely closed the tab).
+    await db.query(
+        `DELETE FROM "wager" WHERE game_code=$1 AND state='staking' AND created_at < NOW() - INTERVAL '5 minutes'`,
+        [gameCode]
+    );
     const res = await db.query(`SELECT * FROM "wager" WHERE game_code=$1`, [gameCode]);
     return res.rowCount ? (res.rows[0] as Wager) : null;
 };
