@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBolt, IconChess, IconLink } from "@tabler/icons-react";
+import { IconBolt, IconChess, IconLink, IconTrophy } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useContext, useEffect, useState } from "react";
@@ -192,8 +192,11 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
                 </>
               )}
             </button>
+            <button className="btn-dark w-full sm:w-auto" onClick={() => router.push("/play")}>
+              <IconTrophy size={18} /> Wager Arena
+            </button>
             <p className="text-xs text-[rgba(216,204,176,0.45)]">
-              Instant game against Stockfish — or set up a custom match below.
+              Quick game vs Stockfish, or unlock staked wager matches.
             </p>
           </div>
         </section>

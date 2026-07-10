@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NODE_MODULES = join(__dirname, "node_modules");
 
-const SOURCES = ["ArenaToken.sol", "ArenaEscrow.sol"];
+const SOURCES = ["ArenaToken.sol", "ArenaEscrow.sol", "TestUSD.sol", "ArenaExchange.sol"];
 
 // solc import callback — resolve OZ (and any relative) imports from disk.
 function findImport(path) {
@@ -53,7 +53,12 @@ if (out.errors) {
 const artDir = join(__dirname, "artifacts");
 if (!existsSync(artDir)) mkdirSync(artDir);
 
-const wanted = { "ArenaToken.sol": "ArenaToken", "ArenaEscrow.sol": "ArenaEscrow" };
+const wanted = {
+  "ArenaToken.sol": "ArenaToken",
+  "ArenaEscrow.sol": "ArenaEscrow",
+  "TestUSD.sol": "TestUSD",
+  "ArenaExchange.sol": "ArenaExchange",
+};
 for (const [file, name] of Object.entries(wanted)) {
   const c = out.contracts[file][name];
   const artifact = { abi: c.abi, bytecode: "0x" + c.evm.bytecode.object };

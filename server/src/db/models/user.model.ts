@@ -24,7 +24,7 @@ export const findById = async (id: number) => {
     }
     try {
         const res = await db.query(
-            `SELECT id, name, email, wins, losses, draws, resignations, is_admin, banned FROM "user" WHERE id=$1`,
+            `SELECT id, name, email, wins, losses, draws, resignations, is_admin, banned, subscribed FROM "user" WHERE id=$1`,
             [id]
         );
         if (res.rowCount) {
@@ -147,10 +147,25 @@ export const mergeInto = async (intoId: number, fromId: number) => {
     }
 };
 
+// Flip the one-time Arena Pass flag on (idempotent, keeps the first timestamp).
+export const setSubscribed = async (id: number) => {
+    if (!id) return false;
+    try {
+        await db.query(
+            `UPDATE "user" SET subscribed = true, subscribed_at = COALESCE(subscribed_at, CURRENT_TIMESTAMP) WHERE id = $1`,
+            [id]
+        );
+        return true;
+    } catch (err: unknown) {
+        console.log(err);
+        return false;
+    }
+};
+
 export const findByWallet = async (walletAddress: string) => {
     try {
         const res = await db.query(
-            `SELECT id, name, email, wins, losses, draws, wallet_address, banned, is_admin FROM "user" WHERE wallet_address=$1`,
+            `SELECT id, name, email, wins, losses, draws, wallet_address, banned, is_admin, subscribed FROM "user" WHERE wallet_address=$1`,
             [walletAddress]
         );
         return res.rowCount ? (res.rows[0] as User & { wallet_address: string }) : null;
@@ -182,6 +197,7 @@ const UserModel = {
     promoteAdmin,
     linkWallet,
     mergeInto,
+    setSubscribed,
     update,
     remove
 };

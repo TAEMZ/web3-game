@@ -1,6 +1,6 @@
 "use client";
 
-import { IconShield, IconTrophy, IconChartBar } from "@tabler/icons-react";
+import { IconShield, IconTrophy, IconChartBar, IconChess } from "@tabler/icons-react";
 import Link from "next/link";
 import { useContext } from "react";
 
@@ -24,6 +24,10 @@ export default function HeaderNav() {
 
   return (
     <>
+      <Link href="/play" className={linkClass}>
+        <IconChess size={16} />
+        <span>Play</span>
+      </Link>
       <Link href="/rewards" className={linkClass}>
         <IconTrophy size={16} />
         <span>Rewards</span>

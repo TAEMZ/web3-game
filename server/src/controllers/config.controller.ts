@@ -1,8 +1,14 @@
 import type { Request, Response } from "express";
 import { config as web3Config, isTokenConfigured, isEscrowConfigured } from "../web3/arena.js";
+import { usdConfig, isUsdConfigured } from "../web3/usd.js";
+import { SUBSCRIPTION_ARENA } from "./subscription.controller.js";
+
+const EXCHANGE_ADDRESS = (process.env.ARENA_EXCHANGE_ADDRESS || "").trim() || null;
+const EXCHANGE_RATE = Number(process.env.EXCHANGE_RATE ?? 100); // ARENA per 1 USDC
 
 // Public runtime config so the client can pick up the deployed contract
-// addresses without a rebuild (they're filled into server/.env at deploy time).
+// addresses + economy settings without a rebuild (filled into server/.env at
+// deploy time). All testnet/demo.
 export const getConfig = (_req: Request, res: Response) => {
     res.json({
         chainId: web3Config.chainId,
@@ -11,7 +17,14 @@ export const getConfig = (_req: Request, res: Response) => {
         escrowAddress: web3Config.escrow,
         tokenConfigured: isTokenConfigured(),
         escrowConfigured: isEscrowConfigured(),
-        arenaToUsd: Number(process.env.ARENA_TO_USD ?? 0.1),
-        usdToBirr: Number(process.env.USD_TO_BIRR ?? 57)
+        // demo-USD exchange
+        usdAddress: usdConfig.address,
+        usdConfigured: isUsdConfigured(),
+        exchangeAddress: EXCHANGE_ADDRESS,
+        exchangeRate: EXCHANGE_RATE, // ARENA per 1 USDC
+        // 1 ARENA in USD (derived from the exchange rate so display + swap agree)
+        arenaToUsd: EXCHANGE_RATE > 0 ? 1 / EXCHANGE_RATE : 0.01,
+        // one-time Arena Pass price (ARENA) to unlock wager mode
+        subscriptionArena: SUBSCRIPTION_ARENA
     });
 };

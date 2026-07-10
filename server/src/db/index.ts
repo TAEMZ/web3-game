@@ -46,6 +46,9 @@ export const INIT_TABLES = /* sql */ `
     -- platform stake/settle wagers on the player's behalf so players never touch
     -- a wallet or pay gas.
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS custodial_pk VARCHAR(80);
+    -- One-time Arena Pass: unlocks wager (betting) mode. No expiry.
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscribed BOOLEAN DEFAULT false;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscribed_at TIMESTAMP;
 
     CREATE TABLE IF NOT EXISTS "report" (
         id SERIAL PRIMARY KEY,

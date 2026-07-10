@@ -727,8 +727,8 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:w-[344px]">
-        {/* Wager — real-money-style betting, platform-managed (not for bot games) */}
-        {!lobby.vsBot && lobby.code && (
+        {/* Wager panel — only for wager-mode games. Casual games never mount it. */}
+        {lobby.mode === "wager" && lobby.code && (
           <WagerPanel
             gameCode={lobby.code}
             myUserId={session?.user?.id as number | undefined}

@@ -14,6 +14,7 @@ export interface Game {
     endedAt?: number;
     vsBot?: boolean;
     botDifficulty?: "easy" | "medium" | "hard";
+    mode?: "casual" | "wager"; // wager games mount the betting panel; casual never do
 }
 
 export interface User {
@@ -34,4 +35,5 @@ export interface User {
     isBot?: boolean; // computer opponent occupying a player seat
     is_admin?: boolean; // elevated dashboard access
     banned?: boolean; // blocked from logging in / playing
+    subscribed?: boolean; // one-time Arena Pass unlocks wager (betting) mode
 }

@@ -4,7 +4,7 @@ import type { Game } from "@arena/types";
 export const createGame = async (
     side: string,
     unlisted: boolean,
-    opts?: { vsBot?: boolean; difficulty?: string }
+    opts?: { vsBot?: boolean; difficulty?: string; mode?: "casual" | "wager" }
 ) => {
     console.log("🎮 [CREATE GAME] Starting...", { side, unlisted, ...opts });
     const start = Date.now();
@@ -20,7 +20,8 @@ export const createGame = async (
                 side,
                 unlisted,
                 vsBot: opts?.vsBot ?? false,
-                difficulty: opts?.difficulty ?? "medium"
+                difficulty: opts?.difficulty ?? "medium",
+                mode: opts?.mode ?? "casual"
             }),
             cache: "no-store"
         });

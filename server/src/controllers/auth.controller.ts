@@ -10,6 +10,7 @@ import UserModel from "../db/models/user.model.js";
 import { isAdminUser } from "../util/admin.js";
 import { clientIp, isIpBanned, recordUserIp } from "../util/moderation.js";
 import { fundGasIfLow } from "../web3/gas.js";
+import { dripUsdIfLow } from "../web3/usd.js";
 import { io } from "../server.js";
 
 export const getCurrentSession = async (req: Request, res: Response) => {
@@ -418,8 +419,10 @@ export const walletLogin = async (req: Request, res: Response) => {
 
         req.session.walletNonce = undefined;
 
-        // Auto-fund the player's gas so they can sign bets without buying test-ETH.
+        // Auto-fund the player's gas so they can sign bets without buying test-ETH,
+        // and drip a little demo-USD so "dollars" are a real coin in their wallet.
         void fundGasIfLow(address);
+        void dripUsdIfLow(address);
 
         // If the visitor is already signed in with a username account that has no
         // wallet yet, LINK this wallet to that account instead of creating a
@@ -442,7 +445,8 @@ export const walletLogin = async (req: Request, res: Response) => {
                 walletAddress: address,
                 wins: fresh?.wins,
                 losses: fresh?.losses,
-                draws: fresh?.draws
+                draws: fresh?.draws,
+                subscribed: fresh?.subscribed
             };
             await recordUserIp(su.id, ip);
             req.session.save(() => {
@@ -476,6 +480,7 @@ export const walletLogin = async (req: Request, res: Response) => {
             losses: user.losses,
             draws: user.draws,
             walletAddress: address,
+            subscribed: user.subscribed,
             is_admin: isAdminUser(user)
         };
         if (req.session.user.is_admin && typeof user.id === "number") {

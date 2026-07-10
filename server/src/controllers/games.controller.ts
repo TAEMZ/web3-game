@@ -4,6 +4,7 @@ import { Chess } from "chess.js";
 import { nanoid } from "nanoid";
 
 import GameModel, { activeGames } from "../db/models/game.model.js";
+import UserModel from "../db/models/user.model.js";
 import { getBotMove } from "../bot/index.js";
 
 const DIFFICULTY_LABEL: Record<string, string> = {
@@ -93,11 +94,25 @@ export const createGame = async (req: Request, res: Response) => {
             ? req.body.difficulty
             : "medium";
 
+        // Wager mode mounts the betting panel; casual never does. Bot games are
+        // always casual — there's no one to bet against.
+        const mode: "casual" | "wager" = req.body.mode === "wager" && !vsBot ? "wager" : "casual";
+
+        // Wager games require the one-time Arena Pass (backstop — the UI also gates this).
+        if (mode === "wager" && typeof user.id === "number") {
+            const owner = await UserModel.findById(user.id);
+            if (!owner?.subscribed) {
+                res.status(403).json({ error: "Arena Pass required to create wager matches." });
+                return;
+            }
+        }
+
         const game: Game = {
             code: nanoid(6),
             // Computer games are always private — no reason to list them publicly.
             unlisted: vsBot ? true : unlisted,
             host: user,
+            mode,
             pgn: ""
         };
 

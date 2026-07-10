@@ -10,6 +10,7 @@ import wager from "./wager.route.js";
 import deposit from "./deposit.route.js";
 import withdrawal from "./withdrawal.route.js";
 import leaderboard from "./leaderboard.route.js";
+import subscription from "./subscription.route.js";
 import { getConfig } from "../controllers/config.controller.js";
 
 const router = Router();
@@ -25,5 +26,6 @@ router.use("/wager", wager);
 router.use("/deposits", deposit);
 router.use("/withdrawals", withdrawal);
 router.use("/leaderboard", leaderboard);
+router.use("/subscription", subscription);
 
 export default router;
