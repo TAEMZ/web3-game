@@ -26,7 +26,7 @@ declare module "http" {
 }
 const sessionMiddleware = session({
     store: new PGSession({ pool: db, createTableIfMissing: true }),
-    secret: process.env.SESSION_SECRET || "make sure to change this!",
+    secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
     unset: "destroy",

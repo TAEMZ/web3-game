@@ -9,6 +9,14 @@ import { INIT_TABLES, db } from "./db/index.js";
 import session from "./middleware/session.js";
 import routes from "./routes/index.js";
 import { init as initSocket } from "./socket/index.js";
+import { startSettlementRetryLoop } from "./db/models/settlement-queue.js";
+
+// Validate critical environment variables before starting.
+if (!process.env.SESSION_SECRET) {
+    console.error("FATAL: SESSION_SECRET environment variable is required but not set.");
+    console.error("Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"");
+    process.exit(1);
+}
 
 const corsConfig = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -54,4 +62,5 @@ initSocket();
 const port = process.env.PORT || 3001;
 server.listen(port, () => {
     console.log(`arena api server listening on :${port}`);
+    startSettlementRetryLoop();
 });
