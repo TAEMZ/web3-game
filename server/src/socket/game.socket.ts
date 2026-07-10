@@ -120,7 +120,20 @@ export async function leaveLobby(this: Socket, reason?: DisconnectReason, code?:
                 timeout *= 20; // 20 minutes if game has started
             }
             game.timeout = Number(
-                setTimeout(() => {
+                setTimeout(async () => {
+                    // Save the game before removing it — this triggers wager settlement
+                    // for wager-mode games, preventing tokens from being locked forever.
+                    if (game.pgn && !game.winner && game.white && game.black) {
+                        game.winner = "draw";
+                        game.endReason = "abandoned";
+                    }
+                    if (game.white?.id || game.black?.id) {
+                        try {
+                            await GameModel.save(game);
+                        } catch (err) {
+                            console.error("[socket] timeout save failed:", (err as Error).message);
+                        }
+                    }
                     activeGames.splice(activeGames.indexOf(game), 1);
                 }, timeout)
             );
