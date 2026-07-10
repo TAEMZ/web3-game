@@ -593,7 +593,6 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
     lobby.side !== "s" &&
     !lobby.endReason &&
     !lobby.winner &&
-    !!lobby.pgn &&
     !!lobby.white?.id &&
     !!lobby.black?.id;
 

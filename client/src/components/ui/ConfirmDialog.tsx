@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 // Reusable confirmation modal — replaces window.confirm/alert for anything
-// destructive (resign, quit, leaving a game, etc.).
+// destructive (resign, quit, leaving a game, etc.). Rendered through a portal to
+// <body> so a transformed/blurred ancestor can't offset the fixed overlay.
 export default function ConfirmDialog({
   open,
   title,
@@ -23,16 +25,17 @@ export default function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onClick={onCancel}
     >
       <div
-        className="glass-dark w-full max-w-sm rounded-2xl p-6"
+        className="glass-dark w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-6"
         style={{ border: "1px solid rgba(201,162,39,0.3)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -57,6 +60,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
