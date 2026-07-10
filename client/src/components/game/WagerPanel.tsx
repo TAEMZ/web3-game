@@ -218,7 +218,7 @@ export default function WagerPanel({
       {!busy && !wager && amPlayer && (
         <>
           <p className="mb-2 text-xs text-[rgba(216,204,176,0.55)]">
-            Bet ARENA from your wallet — winner takes the pot. You&apos;ll approve + stake (gas is on us).
+            Bet ARENA from your wallet — winner takes the pot minus {HOUSE_FEE_PERCENT}% platform fee. You&apos;ll approve + stake (gas is on us).
           </p>
           {!account ? (
             <p className="rounded-lg bg-[rgba(201,162,39,0.08)] px-3 py-2 text-xs text-[#E8C040]">
@@ -284,7 +284,10 @@ export default function WagerPanel({
 
       {!busy && wager?.state === "settled" && (
         <div className="text-sm">
-          <p className="text-[#5fb884]">✓ Wager settled — winner paid the pot.</p>
+          <p className="text-[#5fb884]">✓ Wager settled — winner paid {wager.fee_amount ? `${Math.floor(stakeNum * 2 - wager.fee_amount)} ARENA` : "the pot"}.</p>
+          {wager.fee_amount ? (
+            <p className="text-xs text-[rgba(216,204,176,0.4)]">Platform fee: {wager.fee_amount} ARENA ({HOUSE_FEE_PERCENT}%)</p>
+          ) : null}
           {wager.settle_tx && (
             <a
               href={`https://sepolia.etherscan.io/tx/${wager.settle_tx}`}
