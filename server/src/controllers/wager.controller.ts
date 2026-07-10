@@ -168,3 +168,11 @@ export const adminSettleWager = async (req: Request, res: Response) => {
     await WagerModel.markSettled(wager.id, winnerWallet, tx, feeAmount);
     return res.json({ settled: true, winner: winnerWallet, fee: feeAmount, tx });
 };
+
+// Admin: the wager fees the house has collected (settled matches), newest first.
+export const adminWagerFees = async (req: Request, res: Response) => {
+    if (!isAdminUser(req.session?.user)) return res.status(403).end();
+    const wagers = await WagerModel.listSettledWithFees();
+    const totalFees = wagers.reduce((sum, w) => sum + Number(w.fee_amount || 0), 0);
+    return res.json({ feePercent: HOUSE_FEE_PERCENT, totalFees, count: wagers.length, wagers });
+};

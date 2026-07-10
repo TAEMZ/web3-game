@@ -73,6 +73,19 @@ interface SubReq {
   status: string;
   created_at: string;
 }
+interface WagerFee {
+  game_code: string;
+  stake: number;
+  fee_amount: number;
+  winner_wallet: string | null;
+  settle_tx: string | null;
+  created_at: string;
+}
+interface FeesData {
+  feePercent: number;
+  totalFees: number;
+  wagers: WagerFee[];
+}
 
 const REASON_LABEL: Record<string, string> = {
   cheating: "Cheating",
@@ -101,6 +114,7 @@ export default function AdminPage() {
   const [deposits, setDeposits] = useState<Deposit[] | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[] | null>(null);
   const [subs, setSubs] = useState<SubReq[] | null>(null);
+  const [fees, setFees] = useState<FeesData | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -110,13 +124,14 @@ export default function AdminPage() {
   }, [checking, user?.id, user?.is_admin, router]);
 
   async function load() {
-    const [o, p, r, d, w, s] = await Promise.all([
+    const [o, p, r, d, w, s, f] = await Promise.all([
       fetch(`${API_URL}/v1/admin/overview`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/players`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/reports`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/deposits/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/withdrawals/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/subscription/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+      fetch(`${API_URL}/v1/wager/admin/fees`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
     ]);
     if (o) setOverview(o);
     if (p) setPlayers(p.players);
@@ -124,6 +139,7 @@ export default function AdminPage() {
     if (d) setDeposits(d.deposits);
     if (w) setWithdrawals(w.withdrawals);
     if (s) setSubs(s.requests);
+    if (f) setFees(f);
   }
 
   async function subAction(id: number, action: "approve" | "reject", ok: string) {
@@ -440,6 +456,72 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Wager fees collected */}
+      <div className="glass-dark mb-6 overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+        <div className="tricolor-bar" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+            <IconCoins size={18} /> Wager fees collected
+          </h2>
+          <span className="text-xs text-[rgba(216,204,176,0.55)]">
+            {fees ? `${fees.totalFees} ARENA total · ${fees.feePercent}% cut` : "…"}
+          </span>
+        </div>
+        <div className="overflow-x-auto px-3 pb-3">
+          {fees && fees.wagers.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-[rgba(216,204,176,0.4)]">
+              No settled wager matches yet.
+            </p>
+          )}
+          {fees && fees.wagers.length > 0 && (
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-y border-[rgba(201,162,39,0.12)] text-left text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
+                  <th className="px-3 py-2 font-semibold">Game</th>
+                  <th className="px-3 py-2 text-right font-semibold">Pot</th>
+                  <th className="px-3 py-2 text-right font-semibold">Fee ({fees.feePercent}%)</th>
+                  <th className="px-3 py-2 font-semibold">Winner</th>
+                  <th className="px-3 py-2 font-semibold">Settlement tx</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fees.wagers.map((wf, i) => (
+                  <tr
+                    key={`${wf.game_code}-${i}`}
+                    className="border-b border-[rgba(201,162,39,0.07)] hover:bg-[rgba(201,162,39,0.04)]"
+                  >
+                    <td className="px-3 py-2 font-mono text-xs text-[#d8ccb0]">{wf.game_code}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[#d8ccb0]">
+                      {Number(wf.stake) * 2} ARENA
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums text-[#5fb884]">
+                      {Number(wf.fee_amount)} ARENA
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-[rgba(216,204,176,0.6)]">
+                      {wf.winner_wallet ? `${wf.winner_wallet.slice(0, 6)}…${wf.winner_wallet.slice(-4)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {wf.settle_tx ? (
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${wf.settle_tx}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-xs text-[#E8C040] underline hover:text-[#f0d060]"
+                        >
+                          {wf.settle_tx.slice(0, 12)}… ↗
+                        </a>
+                      ) : (
+                        <span className="text-xs text-[rgba(216,204,176,0.35)]">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

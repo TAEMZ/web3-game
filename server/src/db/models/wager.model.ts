@@ -151,6 +151,22 @@ export const settleForGame = async (game: Game): Promise<void> => {
     }
 };
 
+// Admin: settled wagers with the fee the house collected, newest first.
+export const listSettledWithFees = async () => {
+    const res = await db.query(
+        `SELECT game_code, stake, fee_amount, winner_wallet, settle_tx, created_at
+         FROM "wager" WHERE state='settled' ORDER BY id DESC LIMIT 200`
+    );
+    return res.rows as Array<{
+        game_code: string;
+        stake: number;
+        fee_amount: number;
+        winner_wallet: string | null;
+        settle_tx: string | null;
+        created_at: string;
+    }>;
+};
+
 const WagerModel = {
     create,
     createPending,
@@ -161,6 +177,7 @@ const WagerModel = {
     findByMatchId,
     markSettled,
     markCancelled,
-    settleForGame
+    settleForGame,
+    listSettledWithFees
 };
 export default WagerModel;

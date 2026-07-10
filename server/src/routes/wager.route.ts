@@ -6,7 +6,8 @@ import {
     getWager,
     reserveWager,
     cancelReserve,
-    adminSettleWager
+    adminSettleWager,
+    adminWagerFees
 } from "../controllers/wager.controller.js";
 
 const router = Router();
@@ -16,6 +17,7 @@ router.route("/reserve").post(reserveWager);
 router.route("/reserve/cancel").post(cancelReserve);
 router.route("/join").post(joinWager);
 router.route("/settle").post(adminSettleWager);
+router.route("/admin/fees").get(adminWagerFees);
 router.route("/:gameCode").get(getWager);
 
 export default router;
