@@ -18,6 +18,18 @@ const DEFAULT_SIZE = { w: 360, h: 300 };
 const MIN_W = 280;
 const MIN_H = 220;
 
+type ResizeDir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+const RESIZE_HANDLES: { dir: ResizeDir; cls: string }[] = [
+  { dir: "n", cls: "left-3 right-3 top-0 h-1.5 cursor-ns-resize" },
+  { dir: "s", cls: "bottom-0 left-3 right-3 h-1.5 cursor-ns-resize" },
+  { dir: "e", cls: "bottom-3 right-0 top-3 w-1.5 cursor-ew-resize" },
+  { dir: "w", cls: "bottom-3 left-0 top-3 w-1.5 cursor-ew-resize" },
+  { dir: "ne", cls: "right-0 top-0 h-3 w-3 cursor-nesw-resize" },
+  { dir: "nw", cls: "left-0 top-0 h-3 w-3 cursor-nwse-resize" },
+  { dir: "se", cls: "bottom-0 right-0 h-3 w-3 cursor-nwse-resize" },
+  { dir: "sw", cls: "bottom-0 left-0 h-3 w-3 cursor-nesw-resize" }
+];
+
 declare global {
   interface Window {
     // Jitsi's external API is untyped upstream.
@@ -60,7 +72,15 @@ export default function JitsiVideo({
   const winRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
   const dragRef = useRef<{ dx: number; dy: number } | null>(null);
-  const resizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const resizeRef = useRef<{
+    dir: ResizeDir;
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    w: number;
+    h: number;
+  } | null>(null);
   const [active, setActive] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -168,16 +188,29 @@ export default function JitsiVideo({
     }
   }
 
-  // --- resize (corner handle) ---
-  function onResizeDown(e: ReactPointerEvent<HTMLDivElement>) {
+  // --- resize (any edge / corner) ---
+  function startResize(dir: ResizeDir, e: ReactPointerEvent<HTMLDivElement>) {
     e.stopPropagation();
-    resizeRef.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
+    const r = winRef.current?.getBoundingClientRect();
+    if (!r) return;
+    resizeRef.current = { dir, x: e.clientX, y: e.clientY, left: r.left, top: r.top, w: r.width, h: r.height };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
   function onResizeMove(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!resizeRef.current) return;
-    const w = Math.max(MIN_W, Math.min(resizeRef.current.w + (e.clientX - resizeRef.current.x), window.innerWidth - 16));
-    const h = Math.max(MIN_H, Math.min(resizeRef.current.h + (e.clientY - resizeRef.current.y), window.innerHeight - 16));
+    const rz = resizeRef.current;
+    if (!rz) return;
+    const dx = e.clientX - rz.x;
+    const dy = e.clientY - rz.y;
+    let w = rz.dir.includes("e") ? rz.w + dx : rz.dir.includes("w") ? rz.w - dx : rz.w;
+    let h = rz.dir.includes("s") ? rz.h + dy : rz.dir.includes("n") ? rz.h - dy : rz.h;
+    w = Math.max(MIN_W, Math.min(w, window.innerWidth - 8));
+    h = Math.max(MIN_H, Math.min(h, window.innerHeight - 8));
+    // edges/corners that move the top-left keep the opposite side pinned
+    let left = rz.dir.includes("w") ? rz.left + (rz.w - w) : rz.left;
+    let top = rz.dir.includes("n") ? rz.top + (rz.h - h) : rz.top;
+    left = Math.max(0, Math.min(left, window.innerWidth - w));
+    top = Math.max(0, Math.min(top, window.innerHeight - h));
+    setPos({ x: left, y: top });
     setSize({ w, h });
   }
   function onResizeUp(e: ReactPointerEvent<HTMLDivElement>) {
@@ -235,12 +268,19 @@ export default function JitsiVideo({
               </button>
             </div>
             <div ref={containerRef} className="min-h-0 w-full flex-1" />
+            {/* resize from any edge or corner */}
+            {RESIZE_HANDLES.map((hd) => (
+              <div
+                key={hd.dir}
+                className={`absolute z-20 touch-none ${hd.cls}`}
+                onPointerDown={(e) => startResize(hd.dir, e)}
+                onPointerMove={onResizeMove}
+                onPointerUp={onResizeUp}
+              />
+            ))}
             <div
-              className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize touch-none"
+              className="pointer-events-none absolute bottom-0 right-0 h-4 w-4"
               style={{ background: "linear-gradient(135deg, transparent 45%, rgba(201,162,39,0.75) 45%)" }}
-              onPointerDown={onResizeDown}
-              onPointerMove={onResizeMove}
-              onPointerUp={onResizeUp}
             />
           </div>,
           document.body

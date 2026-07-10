@@ -191,13 +191,13 @@ export default function GameOverModal({
     subtitle = winnerName ? `${winnerName} won ${rt}.` : "The game ended in a draw.";
   }
 
+  // Wager-win breakdown, shown as its own block in the panel below.
+  const wagerPot = wagerStake ? wagerStake * 2 : 0;
+  const wagerCut = wagerFee > 0 ? wagerFee : Math.floor((wagerPot * HOUSE_FEE_PERCENT) / 100);
+  const wagerReceived = wagerPot - wagerCut;
+
   const lines: { label: string; value: number }[] = [];
   if (outcome === "win") {
-    if (wagerResult === "won" && wagerStake) {
-      const netProfit = Math.floor(wagerStake * 2 * (1 - HOUSE_FEE_PERCENT / 100)) - wagerStake;
-      lines.push({ label: "Wager winnings", value: netProfit });
-      if (wagerFee > 0) lines.push({ label: `System cut (${HOUSE_FEE_PERCENT}%)`, value: -wagerFee });
-    }
     lines.push({ label: "Win reward", value: WIN_REWARD });
   } else if (outcome === "draw") {
     if (wagerStake) lines.push({ label: "Wager refunded", value: 0 });
@@ -244,6 +244,25 @@ export default function GameOverModal({
 
         {outcome !== "spectator" && (
           <div className="mb-6 rounded-xl border p-4" style={{ background: "rgba(0,0,0,0.28)", borderColor: border }}>
+            {outcome === "win" && wagerResult === "won" && !!wagerStake && (
+              <div className="mb-3 rounded-lg border border-[rgba(95,184,132,0.25)] bg-[rgba(95,184,132,0.06)] p-3 text-sm">
+                <p className="mb-1.5 font-semibold text-[#5fb884]">Wager payout</p>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-[rgba(216,204,176,0.65)]">Pot</span>
+                    <span className="tabular-nums text-[#d8ccb0]">{wagerPot} ARENA</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[rgba(216,204,176,0.65)]">System cut ({HOUSE_FEE_PERCENT}%)</span>
+                    <span className="tabular-nums text-[#e06666]">−{wagerCut} ARENA</span>
+                  </div>
+                  <div className="flex justify-between border-t border-[rgba(95,184,132,0.2)] pt-1 font-semibold">
+                    <span className="text-[#5fb884]">You received</span>
+                    <span className="tabular-nums text-[#5fb884]">{wagerReceived} ARENA</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-1.5">
               {lines.map((l) => (
                 <div key={l.label} className="flex items-center justify-between text-sm">

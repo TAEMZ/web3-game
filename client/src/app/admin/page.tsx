@@ -80,6 +80,8 @@ interface WagerFee {
   winner_wallet: string | null;
   settle_tx: string | null;
   created_at: string;
+  p1_name: string | null;
+  p2_name: string | null;
 }
 interface FeesData {
   feePercent: number;
@@ -481,6 +483,7 @@ export default function AdminPage() {
               <thead>
                 <tr className="border-y border-[rgba(201,162,39,0.12)] text-left text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
                   <th className="px-3 py-2 font-semibold">Game</th>
+                  <th className="px-3 py-2 font-semibold">Players</th>
                   <th className="px-3 py-2 text-right font-semibold">Pot</th>
                   <th className="px-3 py-2 text-right font-semibold">Fee ({fees.feePercent}%)</th>
                   <th className="px-3 py-2 font-semibold">Winner</th>
@@ -494,6 +497,10 @@ export default function AdminPage() {
                     className="border-b border-[rgba(201,162,39,0.07)] hover:bg-[rgba(201,162,39,0.04)]"
                   >
                     <td className="px-3 py-2 font-mono text-xs text-[#d8ccb0]">{wf.game_code}</td>
+                    <td className="px-3 py-2 text-xs text-[#d8ccb0]">
+                      {wf.p1_name || "?"} <span className="text-[rgba(216,204,176,0.4)]">vs</span>{" "}
+                      {wf.p2_name || "?"}
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#d8ccb0]">
                       {Number(wf.stake) * 2} ARENA
                     </td>

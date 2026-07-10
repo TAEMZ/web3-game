@@ -151,11 +151,15 @@ export const settleForGame = async (game: Game): Promise<void> => {
     }
 };
 
-// Admin: settled wagers with the fee the house collected, newest first.
+// Admin: settled wagers with the fee the house collected + who played, newest first.
 export const listSettledWithFees = async () => {
     const res = await db.query(
-        `SELECT game_code, stake, fee_amount, winner_wallet, settle_tx, created_at
-         FROM "wager" WHERE state='settled' ORDER BY id DESC LIMIT 200`
+        `SELECT w.game_code, w.stake, w.fee_amount, w.winner_wallet, w.settle_tx, w.created_at,
+                u1.name AS p1_name, u2.name AS p2_name
+         FROM "wager" w
+         LEFT JOIN "user" u1 ON u1.id = w.p1_user_id
+         LEFT JOIN "user" u2 ON u2.id = w.p2_user_id
+         WHERE w.state='settled' ORDER BY w.id DESC LIMIT 200`
     );
     return res.rows as Array<{
         game_code: string;
@@ -164,6 +168,8 @@ export const listSettledWithFees = async () => {
         winner_wallet: string | null;
         settle_tx: string | null;
         created_at: string;
+        p1_name: string | null;
+        p2_name: string | null;
     }>;
 };
 
