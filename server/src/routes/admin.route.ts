@@ -5,6 +5,7 @@ import {
     distribute,
     listPlayers,
     listReports,
+    listWagers,
     overview,
     requireAdmin,
     resolveReport,
@@ -20,6 +21,7 @@ router.get("/players", listPlayers);
 router.get("/overview", overview);
 router.post("/distribute", distribute);
 router.get("/reports", listReports);
+router.get("/wagers", listWagers);
 router.post("/ban", banUser);
 router.post("/unban", unbanUser);
 router.post("/resolve", resolveReport);
