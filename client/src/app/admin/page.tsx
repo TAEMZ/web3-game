@@ -225,21 +225,33 @@ export default function AdminPage() {
   ];
 
   return (
+    <div className="chess-bg min-h-[calc(100vh-57px)]">
     <div className="animate-fade-in-up mx-auto w-full max-w-5xl px-4 py-8">
-      <div className="mb-6">
+      <div
+        className="glass-dark relative mb-6 overflow-hidden rounded-2xl p-6"
+        style={{ border: "1px solid rgba(201,162,39,0.2)" }}
+      >
+        <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
         <h1 className="font-display text-3xl font-black text-[#d8ccb0] md:text-4xl">
           Admin <span className="gold-text-shimmer">Console</span>
         </h1>
         <p className="mt-1 text-sm text-[rgba(216,204,176,0.5)]">
-          Review reports, moderate players, and release rewards.
+          Verify Arena Pass purchases and top-ups, moderate players, and release rewards.
         </p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="glass-dark rounded-2xl p-4" style={{ border: "1px solid rgba(201,162,39,0.15)" }}>
+          <div
+            key={t.label}
+            className="glass-dark relative overflow-hidden rounded-2xl p-4"
+            style={{ border: "1px solid rgba(201,162,39,0.15)" }}
+          >
+            <span className="absolute inset-x-0 top-0 h-0.5" style={{ background: t.color, opacity: 0.75 }} />
             <t.Icon size={20} style={{ color: t.color }} />
-            <p className="font-display mt-2 text-2xl font-bold text-[#d8ccb0]">{t.value ?? "—"}</p>
+            <p className="font-display mt-2 text-2xl font-bold tabular-nums" style={{ color: t.color }}>
+              {t.value ?? "—"}
+            </p>
             <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
           </div>
         ))}
@@ -584,6 +596,7 @@ export default function AdminPage() {
           {toast}
         </div>
       )}
+    </div>
     </div>
   );
 }

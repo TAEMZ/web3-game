@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBolt, IconChess, IconLink, IconTrophy } from "@tabler/icons-react";
+import { IconBolt, IconChess, IconLink, IconTrophy, IconChevronRight } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useContext, useEffect, useState } from "react";
@@ -27,8 +27,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
 
-  // Admins don't use the player dashboard — send them to the admin console.
-  // Signed-out visitors go to login.
   useEffect(() => {
     if (isLoading) return;
     if (user?.is_admin) {
@@ -38,7 +36,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
     if (!user?.id) router.replace("/login");
   }, [isLoading, user?.id, user?.is_admin, router]);
 
-  // Pull the player's record + token balance for the hero.
   useEffect(() => {
     if (isLoading || !user?.id) return;
     let active = true;
@@ -59,7 +56,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
       active = false;
     };
   }, [isLoading, user?.id]);
-
 
   async function quickPlay() {
     setQuickLoading(true);
@@ -92,25 +88,13 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   return (
     <div className="chess-bg min-h-[calc(100vh-57px)]">
       <div className="animate-fade-in-up mx-auto w-full max-w-5xl px-4 py-8">
-        {/* ── Hero: who you are + your record ── */}
+        {/* ── Identity + balance ── */}
         <section
-          className="glass-dark relative overflow-hidden rounded-3xl p-6 md:p-8"
+          className="glass-dark relative overflow-hidden rounded-3xl p-6 md:p-7"
           style={{ border: "1px solid rgba(201,162,39,0.22)" }}
         >
           <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
-          {/* faint chessboard motif */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-10 h-64 w-64 opacity-[0.06]"
-            style={{
-              background:
-                "repeating-conic-gradient(#E8C040 0% 25%, transparent 0% 50%) 0 / 44px 44px",
-              maskImage: "radial-gradient(circle at center, #000 30%, transparent 72%)",
-              WebkitMaskImage: "radial-gradient(circle at center, #000 30%, transparent 72%)",
-            }}
-          />
-
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div
                 className="font-display grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-black text-[#0d1612]"
@@ -122,12 +106,8 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
                 {initial}
               </div>
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.15em] text-[rgba(216,204,176,0.45)]">
-                  Welcome back
-                </p>
-                <h1 className="font-display truncate text-2xl font-black text-[#d8ccb0] md:text-3xl">
-                  {name}
-                </h1>
+                <p className="text-xs uppercase tracking-[0.15em] text-[rgba(216,204,176,0.45)]">Welcome back</p>
+                <h1 className="font-display truncate text-2xl font-black text-[#d8ccb0] md:text-3xl">{name}</h1>
                 <span
                   className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                   style={{
@@ -135,85 +115,86 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
                     color: hasWallet ? "#5fb884" : "#E8C040",
                   }}
                 >
-                  <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: hasWallet ? "#5fb884" : "#E8C040" }}
-                  />
-                  {hasWallet ? "Wallet connected" : "Guest — connect a wallet"}
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: hasWallet ? "#5fb884" : "#E8C040" }} />
+                  {hasWallet ? "Wallet connected" : "Connect a wallet in the menu"}
                 </span>
               </div>
             </div>
 
-            {/* ARENA token balance */}
-            <div className="flex items-center gap-4">
-              <div
-                className="rounded-2xl px-5 py-3 text-center"
-                style={{
-                  background: "rgba(201,162,39,0.08)",
-                  border: "1px solid rgba(201,162,39,0.2)",
-                }}
-              >
-                <p className="font-display text-3xl font-black text-[#E8C040]">
-                  {stats ? stats.totalTokens : "—"}
-                </p>
-                <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.5)]">
-                  ARENA
-                </p>
-              </div>
+            <div
+              className="flex items-center justify-between gap-4 rounded-2xl px-5 py-3 sm:flex-col sm:items-end sm:justify-center sm:text-right"
+              style={{ background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.2)" }}
+            >
+              <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.5)] sm:order-2">
+                ARENA balance
+              </p>
+              <p className="font-display text-3xl font-black text-[#E8C040] sm:order-1">
+                {stats ? stats.totalTokens.toLocaleString() : "—"}
+              </p>
             </div>
-          </div>
-
-          {/* stat strip */}
-          <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {statTiles.map((t) => (
-              <div
-                key={t.label}
-                className="rounded-xl px-4 py-3 text-center"
-                style={{ background: "rgba(13,22,18,0.55)", border: "1px solid rgba(201,162,39,0.12)" }}
-              >
-                <p className="font-display text-2xl font-bold" style={{ color: t.color }}>
-                  {t.value ?? "—"}
-                </p>
-                <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
-                  {t.label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* one-click primary action */}
-          <div className="relative mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button className="btn-gold w-full sm:w-auto" onClick={quickPlay} disabled={quickLoading}>
-              {quickLoading ? (
-                "Starting…"
-              ) : (
-                <>
-                  <IconBolt size={18} /> Quick Play vs Computer
-                </>
-              )}
-            </button>
-            <button className="btn-dark w-full sm:w-auto" onClick={() => router.push("/play")}>
-              <IconTrophy size={18} /> Wager Arena
-            </button>
-            <p className="text-xs text-[rgba(216,204,176,0.45)]">
-              Quick game vs Stockfish, or unlock staked wager matches.
-            </p>
           </div>
         </section>
 
-        {/* ── Play options + live games ── */}
-        <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
-          <div
-            className="glass-dark flex flex-col gap-5 rounded-2xl p-6"
-            style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+        {/* ── Big play actions ── */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <button
+            onClick={quickPlay}
+            disabled={quickLoading}
+            className="group glass-dark flex items-center gap-4 rounded-2xl p-5 text-left transition hover:border-[rgba(201,162,39,0.5)] disabled:opacity-60"
+            style={{ border: "1px solid rgba(201,162,39,0.2)" }}
           >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgba(201,162,39,0.14)] text-[#E8C040]">
+              <IconBolt size={24} />
+            </span>
+            <div className="flex-1">
+              <p className="font-display text-lg font-bold text-[#d8ccb0]">
+                {quickLoading ? "Starting…" : "Quick Play"}
+              </p>
+              <p className="text-xs text-[rgba(216,204,176,0.5)]">Instant game vs the computer</p>
+            </div>
+            <IconChevronRight size={18} className="text-[rgba(216,204,176,0.3)] transition group-hover:text-[#E8C040]" />
+          </button>
+
+          <button
+            onClick={() => router.push("/play")}
+            className="group relative flex items-center gap-4 overflow-hidden rounded-2xl p-5 text-left transition"
+            style={{ border: "1px solid rgba(201,162,39,0.5)", background: "rgba(201,162,39,0.06)", boxShadow: "0 6px 24px rgba(201,162,39,0.1)" }}
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgba(201,162,39,0.2)] text-[#E8C040]">
+              <IconTrophy size={24} />
+            </span>
+            <div className="flex-1">
+              <p className="font-display text-lg font-bold text-[#E8C040]">Wager Arena</p>
+              <p className="text-xs text-[rgba(216,204,176,0.6)]">Stake ARENA — winner takes the pot</p>
+            </div>
+            <IconChevronRight size={18} className="text-[#E8C040] transition group-hover:translate-x-0.5" />
+          </button>
+        </div>
+
+        {/* ── Stats ── */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {statTiles.map((t) => (
+            <div
+              key={t.label}
+              className="glass-dark rounded-xl px-4 py-3 text-center"
+              style={{ border: "1px solid rgba(201,162,39,0.12)" }}
+            >
+              <p className="font-display text-2xl font-bold tabular-nums" style={{ color: t.color }}>
+                {t.value ?? "—"}
+              </p>
+              <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Custom game / join / live ── */}
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+          <div className="glass-dark flex flex-col gap-5 rounded-2xl p-6" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
             <div>
               <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
-                <IconChess size={20} /> New game
+                <IconChess size={20} /> Custom game
               </h2>
-              <p className="text-xs text-[rgba(216,204,176,0.45)]">
-                Play the computer or open a room for a friend.
-              </p>
+              <p className="text-xs text-[rgba(216,204,176,0.45)]">Play the computer or open a room for a friend.</p>
             </div>
             <CreateGame />
 
