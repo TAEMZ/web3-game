@@ -7,6 +7,7 @@ import {
     approveDeposit,
     rejectDeposit
 } from "../controllers/deposit.controller.js";
+import { requireAdmin } from "../util/admin.js";
 
 const router = Router();
 
@@ -14,9 +15,9 @@ const router = Router();
 router.route("/").post(requestDeposit);
 router.route("/mine").get(myDeposits);
 
-// Admin (guarded inside the controller via isAdminUser)
-router.route("/admin").get(listDeposits);
-router.route("/:id/approve").post(approveDeposit);
-router.route("/:id/reject").post(rejectDeposit);
+// Admin
+router.route("/admin").get(requireAdmin, listDeposits);
+router.route("/:id/approve").post(requireAdmin, approveDeposit);
+router.route("/:id/reject").post(requireAdmin, rejectDeposit);
 
 export default router;
