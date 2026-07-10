@@ -83,10 +83,12 @@ export const INIT_TABLES = /* sql */ `
         p2_wallet VARCHAR(64),
         state VARCHAR(16) DEFAULT 'open',    -- open | funded | settled | cancelled
         winner_wallet VARCHAR(64),
+        fee_amount NUMERIC DEFAULT 0,        -- platform fee deducted from pot
         settle_tx VARCHAR(80),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_wager_match ON "wager"(match_id);
+    ALTER TABLE "wager" ADD COLUMN IF NOT EXISTS fee_amount NUMERIC DEFAULT 0;
 
     -- Token top-ups: player pays (off-chain, fiat/testnet), admin verifies the
     -- amount and releases (mints) ARENA to the player's wallet. Repeatable, no expiry.

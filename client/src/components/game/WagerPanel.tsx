@@ -1,6 +1,7 @@
 "use client";
 
 import { API_URL } from "@/config";
+import { HOUSE_FEE_PERCENT } from "@/config";
 import { IconCoins } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -25,6 +26,7 @@ interface Wager {
   p2_user_id: number | null;
   state: "staking" | "open" | "funded" | "settled" | "cancelled";
   winner_wallet: string | null;
+  fee_amount: number;
   settle_tx: string | null;
 }
 
@@ -216,7 +218,7 @@ export default function WagerPanel({
       {!busy && !wager && amPlayer && (
         <>
           <p className="mb-2 text-xs text-[rgba(216,204,176,0.55)]">
-            Bet ARENA from your wallet — winner takes the pot. You&apos;ll approve + stake (gas is on us).
+            Bet ARENA from your wallet — winner takes the pot minus {HOUSE_FEE_PERCENT}% platform fee. You&apos;ll approve + stake (gas is on us).
           </p>
           {!account ? (
             <p className="rounded-lg bg-[rgba(201,162,39,0.08)] px-3 py-2 text-xs text-[#E8C040]">
@@ -255,7 +257,7 @@ export default function WagerPanel({
         <div className="text-sm">
           <p className="mb-2 text-[#d8ccb0]">
             Stake: <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum} ARENA</span>
-            <span className="text-xs text-[rgba(216,204,176,0.4)]"> · winner takes {stakeNum * 2}</span>
+            <span className="text-xs text-[rgba(216,204,176,0.4)]"> · winner takes {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} <span className="text-[rgba(216,204,176,0.3)]">({HOUSE_FEE_PERCENT}% fee)</span></span>
           </p>
           {iAmCreator ? (
             <p className="text-xs text-[rgba(216,204,176,0.5)]">Waiting for your opponent to accept…</p>
@@ -275,14 +277,17 @@ export default function WagerPanel({
             💰 <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum * 2} ARENA</span> pot
           </p>
           <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
-            Both staked {stakeNum}. The winner is paid automatically when the game ends.
+            Both staked {stakeNum}. Winner receives {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} ARENA ({HOUSE_FEE_PERCENT}% platform fee).
           </p>
         </div>
       )}
 
       {!busy && wager?.state === "settled" && (
         <div className="text-sm">
-          <p className="text-[#5fb884]">✓ Wager settled — winner paid the pot.</p>
+          <p className="text-[#5fb884]">✓ Wager settled — winner paid {wager.fee_amount ? `${Math.floor(stakeNum * 2 - wager.fee_amount)} ARENA` : "the pot"}.</p>
+          {wager.fee_amount ? (
+            <p className="text-xs text-[rgba(216,204,176,0.4)]">Platform fee: {wager.fee_amount} ARENA ({HOUSE_FEE_PERCENT}%)</p>
+          ) : null}
           {wager.settle_tx && (
             <a
               href={`https://sepolia.etherscan.io/tx/${wager.settle_tx}`}

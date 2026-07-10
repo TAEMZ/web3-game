@@ -6,6 +6,8 @@ import { isAdminUser } from "../util/admin.js";
 import { withKeyLock } from "../util/locks.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../web3/arena.js";
 
+const HOUSE_FEE_PERCENT = Number(process.env.HOUSE_FEE_PERCENT || "15");
+
 const isAddr = (a: unknown): a is string => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a);
 
 const gameParticipant = (gameCode: string, userId: number) => {
@@ -155,13 +157,14 @@ export const adminSettleWager = async (req: Request, res: Response) => {
 
     if (draw) {
         const tx = await settleWagerDraw(wager.match_id);
-        await WagerModel.markSettled(wager.id, null, tx);
+        await WagerModel.markSettled(wager.id, null, tx, 0);
         return res.json({ settled: true, draw: true, tx });
     }
     if (!isAddr(winnerWallet) || ![wager.p1_wallet, wager.p2_wallet].includes(winnerWallet.toLowerCase())) {
         return res.status(400).json({ error: "winnerWallet must be one of the two staked wallets" });
     }
+    const feeAmount = Math.floor(wager.stake * 2 * HOUSE_FEE_PERCENT / 100);
     const tx = await settleWager(wager.match_id, winnerWallet);
-    await WagerModel.markSettled(wager.id, winnerWallet, tx);
-    return res.json({ settled: true, winner: winnerWallet, tx });
+    await WagerModel.markSettled(wager.id, winnerWallet, tx, feeAmount);
+    return res.json({ settled: true, winner: winnerWallet, fee: feeAmount, tx });
 };
