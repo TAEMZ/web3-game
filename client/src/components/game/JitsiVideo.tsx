@@ -98,7 +98,8 @@ export default function JitsiVideo({
             prejoinPageEnabled: false,
             disableDeepLinking: true,
             startWithAudioMuted: false,
-            startWithVideoMuted: false
+            startWithVideoMuted: false,
+            disableModeratorIndicator: true
           },
           interfaceConfigOverwrite: {
             MOBILE_APP_PROMO: false,
@@ -163,12 +164,14 @@ export default function JitsiVideo({
           full-screen on phones, a large centered panel on desktop. */}
       {active && (
         <div
-          className="fixed inset-0 z-[60] flex bg-black/85 p-0 sm:p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-0 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="relative m-auto flex h-full w-full max-w-5xl flex-col overflow-hidden bg-black sm:h-[85vh] sm:rounded-2xl">
-            <div ref={containerRef} className="min-h-0 w-full flex-1" />
+          {/* Full-screen on phones; a 16:9 landscape window on larger screens so Jitsi
+              renders its desktop layout instead of a tall, mobile-looking strip. */}
+          <div className="relative h-full w-full overflow-hidden bg-black sm:h-auto sm:aspect-video sm:max-h-[86vh] sm:w-[92vw] sm:max-w-4xl sm:rounded-2xl">
+            <div ref={containerRef} className="h-full w-full" />
             <button
               onClick={stop}
               className="absolute right-3 top-3 z-10 rounded-full bg-[rgba(184,24,24,0.92)] px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:bg-[rgba(184,24,24,1)]"
