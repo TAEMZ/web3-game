@@ -102,7 +102,7 @@ export const reserveWager = async (req: Request, res: Response) => {
 
     const { gameCode } = req.body;
     const stake = Number(req.body.stake);
-    if (!gameCode || !(stake > 0)) return res.status(400).json({ error: "gameCode, stake required" });
+    if (!gameCode || !(stake > 0) || !Number.isInteger(stake)) return res.status(400).json({ error: "gameCode, stake (integer > 0) required" });
     if (!gameParticipant(gameCode, userId)) return res.status(403).json({ error: "Not a player in that game" });
 
     try {
