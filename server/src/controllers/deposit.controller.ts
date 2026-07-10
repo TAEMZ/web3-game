@@ -23,6 +23,16 @@ export const requestDeposit = async (req: Request, res: Response) => {
     if (!(amount > 0) || amount > MAX_TOPUP) {
         return res.status(400).json({ error: `amount must be between 1 and ${MAX_TOPUP}` });
     }
+
+    // Rate limit: only 1 active (pending) deposit per player.
+    const { rows } = await db.query(
+        `SELECT id FROM "deposit" WHERE user_id=$1 AND status='pending' LIMIT 1`,
+        [user.id]
+    );
+    if (rows.length) {
+        return res.status(409).json({ error: "You already have a pending deposit" });
+    }
+
     const wallet = isAddr(req.body.wallet) ? req.body.wallet : await walletOfUser(user.id);
 
     const deposit = await DepositModel.create({
