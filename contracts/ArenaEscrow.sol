@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /**
  * @title ArenaEscrow
  * @dev Wager matches for Chess Arena. Two players each stake the same amount of
- *      ARENA tokens; the winner takes the pot. Results are reported by an
- *      account holding SETTLER_ROLE (the game server, gated behind admin
- *      verification). Draws refund both players.
+ *      ARENA tokens; the winner takes the pot (minus a platform fee).
+ *      Results are reported by an account holding SETTLER_ROLE (the game server,
+ *      gated behind admin verification). Draws refund both players (no fee).
  *
  * Flow:
  *   1. player1 approves this contract for `stake` ARENA, then createMatch(stake)
@@ -23,6 +23,8 @@ contract ArenaEscrow is AccessControl, ReentrancyGuard {
     bytes32 public constant SETTLER_ROLE = keccak256("SETTLER_ROLE");
 
     IERC20 public immutable token;
+    address public treasury;
+    uint256 public feePercent; // e.g. 15 = 15%
 
     enum State { NONE, OPEN, FUNDED, SETTLED, CANCELLED }
 
@@ -38,14 +40,32 @@ contract ArenaEscrow is AccessControl, ReentrancyGuard {
 
     event MatchCreated(uint256 indexed id, address indexed player1, uint256 stake);
     event MatchJoined(uint256 indexed id, address indexed player2);
-    event MatchSettled(uint256 indexed id, address indexed winner, uint256 payout);
+    event MatchSettled(uint256 indexed id, address indexed winner, uint256 payout, uint256 fee);
     event MatchCancelled(uint256 indexed id);
+    event TreasuryUpdated(address indexed newTreasury);
+    event FeeUpdated(uint256 newFeePercent);
 
-    constructor(address tokenAddress) {
+    constructor(address tokenAddress, address treasuryAddress, uint256 _feePercent) {
         require(tokenAddress != address(0), "token=0");
+        require(treasuryAddress != address(0), "treasury=0");
+        require(_feePercent <= 50, "fee too high");
         token = IERC20(tokenAddress);
+        treasury = treasuryAddress;
+        feePercent = _feePercent;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SETTLER_ROLE, msg.sender);
+    }
+
+    function setTreasury(address newTreasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newTreasury != address(0), "treasury=0");
+        treasury = newTreasury;
+        emit TreasuryUpdated(newTreasury);
+    }
+
+    function setFeePercent(uint256 newFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newFee <= 50, "fee too high");
+        feePercent = newFee;
+        emit FeeUpdated(newFee);
     }
 
     function createMatch(uint256 stake) external nonReentrant returns (uint256 id) {
@@ -66,15 +86,21 @@ contract ArenaEscrow is AccessControl, ReentrancyGuard {
         emit MatchJoined(id, msg.sender);
     }
 
-    /// @dev Server reports the winner after admin verification.
+    /// @dev Server reports the winner after admin verification. Deducts feePercent
+    ///      from the pot and sends it to treasury; the winner receives the rest.
     function settleMatch(uint256 id, address winner) external onlyRole(SETTLER_ROLE) nonReentrant {
         Match storage m = matches[id];
         require(m.state == State.FUNDED, "not funded");
         require(winner == m.player1 || winner == m.player2, "winner not in match");
         m.state = State.SETTLED;
         uint256 pot = m.stake * 2;
-        require(token.transfer(winner, pot), "payout failed");
-        emit MatchSettled(id, winner, pot);
+        uint265 fee = (pot * feePercent) / 100;
+        uint256 payout = pot - fee;
+        if (fee > 0) {
+            require(token.transfer(treasury, fee), "fee transfer failed");
+        }
+        require(token.transfer(winner, payout), "payout failed");
+        emit MatchSettled(id, winner, payout, fee);
     }
 
     /// @dev Draw: refund both players their stake.
