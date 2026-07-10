@@ -1,6 +1,7 @@
 "use client";
 
 import { API_URL } from "@/config";
+import { HOUSE_FEE_PERCENT } from "@/config";
 import { IconCoins } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -25,6 +26,7 @@ interface Wager {
   p2_user_id: number | null;
   state: "staking" | "open" | "funded" | "settled" | "cancelled";
   winner_wallet: string | null;
+  fee_amount: number;
   settle_tx: string | null;
 }
 
@@ -255,7 +257,7 @@ export default function WagerPanel({
         <div className="text-sm">
           <p className="mb-2 text-[#d8ccb0]">
             Stake: <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum} ARENA</span>
-            <span className="text-xs text-[rgba(216,204,176,0.4)]"> · winner takes {stakeNum * 2}</span>
+            <span className="text-xs text-[rgba(216,204,176,0.4)]"> · winner takes {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} <span className="text-[rgba(216,204,176,0.3)]">({HOUSE_FEE_PERCENT}% fee)</span></span>
           </p>
           {iAmCreator ? (
             <p className="text-xs text-[rgba(216,204,176,0.5)]">Waiting for your opponent to accept…</p>
@@ -275,7 +277,7 @@ export default function WagerPanel({
             💰 <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum * 2} ARENA</span> pot
           </p>
           <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
-            Both staked {stakeNum}. The winner is paid automatically when the game ends.
+            Both staked {stakeNum}. Winner receives {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} ARENA ({HOUSE_FEE_PERCENT}% platform fee).
           </p>
         </div>
       )}
