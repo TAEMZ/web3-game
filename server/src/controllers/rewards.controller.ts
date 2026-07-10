@@ -4,6 +4,7 @@ import UserModel from "../db/models/user.model.js";
 import { db } from "../db/index.js";
 import { mintReward, tokenBalanceOf, isTokenConfigured, config as web3Config } from "../web3/arena.js";
 import { getPlayerBadges, mintBadgesFor, nftConfig } from "../web3/nft.js";
+import { isAdminUser } from "../util/admin.js";
 
 const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
 const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
@@ -14,6 +15,10 @@ const RESIGN_PENALTY = Number(process.env.RESIGN_PENALTY ?? 25);
 const EXCHANGE_RATE = Number(process.env.EXCHANGE_RATE ?? 100); // ARENA per 1 USDC
 const ARENA_TO_USD = Number(process.env.ARENA_TO_USD ?? (EXCHANGE_RATE > 0 ? 1 / EXCHANGE_RATE : 0.01));
 const USD_TO_BIRR = Number(process.env.USD_TO_BIRR ?? 57); // 1 USD ≈ 57 ETB
+
+// Idempotency guard — prevents the same game from being rewarded multiple times
+// even if the endpoint is called repeatedly (e.g. by a malicious client).
+const rewardedGames = new Set<number>();
 
 const walletOfUser = async (userId: number): Promise<string | null> => {
     const r = await db.query(`SELECT wallet_address FROM "user" WHERE id=$1`, [userId]);
@@ -37,8 +42,19 @@ const conversionFor = (tokens: number) => {
  */
 export const processGameRewards = async (req: Request, res: Response) => {
     try {
+        // Require authentication — only logged-in users (ideally an admin or the
+        // server itself) should trigger on-chain minting.
+        if (!req.session?.user?.id) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
         const { gameId } = req.body;
         if (!gameId) return res.status(400).json({ error: "Game ID required" });
+
+        // Idempotency — refuse to reward the same game twice.
+        if (rewardedGames.has(gameId)) {
+            return res.status(409).json({ error: "Rewards already processed for this game" });
+        }
 
         const game = await GameModel.findById(gameId);
         if (!game) return res.status(404).json({ error: "Game not found" });
@@ -61,6 +77,9 @@ export const processGameRewards = async (req: Request, res: Response) => {
             await rewardSide("white", REWARD_DRAW);
             await rewardSide("black", REWARD_DRAW);
         }
+
+        // Mark this game as rewarded so it can't be processed again.
+        rewardedGames.add(gameId);
 
         return res.json({
             success: true,
