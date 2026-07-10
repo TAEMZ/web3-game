@@ -13,9 +13,9 @@ const JAAS_DOMAIN = "8x8.vc";
 const APP_ID =
   process.env.NEXT_PUBLIC_JAAS_APP_ID || "vpaas-magic-cookie-9cea7e6134b846cd9883d0ff27cb4dfe";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
   interface Window {
+    // Jitsi's external API is untyped upstream.
     JitsiMeetExternalAPI?: any;
   }
 }
