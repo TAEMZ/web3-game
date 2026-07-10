@@ -87,6 +87,7 @@ export const guestSession = async (req: Request, res: Response) => {
 export const logoutSession = async (req: Request, res: Response) => {
     try {
         req.session.destroy(() => {
+            res.clearCookie("arena");
             res.status(204).end();
         });
     } catch (err: unknown) {
