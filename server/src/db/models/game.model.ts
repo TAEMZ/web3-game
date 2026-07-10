@@ -1,7 +1,6 @@
 import type { Game, User } from "@arena/types";
 import { db } from "../index.js";
 import { mintReward, isTokenConfigured } from "../../web3/arena.js";
-import { burnFromCustodial, isCustodyConfigured } from "../../web3/custody.js";
 import WagerModel from "./wager.model.js";
 
 export const activeGames: Game[] = [];
@@ -9,7 +8,6 @@ export const activeGames: Game[] = [];
 // Reward amounts (whole ARENA tokens), minted on-chain to the player's wallet.
 const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
 const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
-const RESIGN_PENALTY = Number(process.env.RESIGN_PENALTY ?? 25);
 
 // Look up a player's linked wallet address (null for guests/bots/unlinked).
 const walletOf = async (userId?: number | string): Promise<string | null> => {
@@ -31,17 +29,10 @@ const distributeRewards = async (game: Game, white: User, black: User): Promise<
             }
         } else if (game.winner === "white" || game.winner === "black") {
             const winner = game.winner === "white" ? white : black;
-            const loser = game.winner === "white" ? black : white;
             const w = await walletOf(winner.id);
             if (w) await mintReward(w, REWARD_WIN);
-            // Resignation penalty: actually burn ARENA from the resigner (loser).
-            if (game.endReason === "resignation" && typeof loser.id === "number" && isCustodyConfigured()) {
-                try {
-                    await burnFromCustodial(loser.id, RESIGN_PENALTY);
-                } catch (e) {
-                    console.warn(`[web3] resign penalty skipped for user ${loser.id}:`, (e as Error).message);
-                }
-            }
+            // (Resignation penalty is tracked in the DB only — players own their
+            //  wallets now, so the platform can't burn from them without a signature.)
         }
     } catch (err) {
         console.error("[web3] distributeRewards error:", (err as Error).message);

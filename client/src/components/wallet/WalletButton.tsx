@@ -1,27 +1,23 @@
 "use client";
 
 import { ConnectButton } from "thirdweb/react";
+import { inAppWallet } from "thirdweb/wallets";
 
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
 
-// Wallet-as-identity login. Connecting a wallet gives us the player's address,
-// which the on-chain layer (rewards, escrow, badges) keys off of.
+// Google/email in-app wallet — the player logs in with Google and gets a wallet
+// they own (no seed phrase, no extension). WalletAuth bridges it to a session.
+const wallets = [inAppWallet({ auth: { options: ["google", "email"] } })];
+
 export default function WalletButton() {
   return (
     <div className="relative">
       <ConnectButton
         client={thirdwebClient}
         chain={activeChain}
-        connectButton={{
-          label: "Connect Wallet",
-          className: "w-full"
-        }}
-        connectModal={{
-          size: "compact"
-        }}
-        onConnect={() => {
-          console.log("✅ [WALLET] Connected successfully");
-        }}
+        wallets={wallets}
+        connectButton={{ label: "Connect Wallet", className: "w-full" }}
+        connectModal={{ size: "compact", title: "Connect to Chess Arena" }}
       />
     </div>
   );

@@ -3,7 +3,6 @@ import WithdrawalModel from "../db/models/withdrawal.model.js";
 import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { tokenBalanceOf, isTokenConfigured } from "../web3/arena.js";
-import { burnFromCustodial, isCustodyConfigured } from "../web3/custody.js";
 
 const ARENA_TO_USD = Number(process.env.ARENA_TO_USD ?? 0.1);
 const USD_TO_BIRR = Number(process.env.USD_TO_BIRR ?? 57);
@@ -63,7 +62,9 @@ export const listWithdrawals = async (req: Request, res: Response) => {
     return res.json({ withdrawals });
 };
 
-// Admin confirms the birr was sent to the player and marks the request paid.
+// Admin confirms the cash was sent and marks the request paid. The player already
+// burned their own ARENA (signed client-side) when they requested the cash-out,
+// so there's nothing to deduct here.
 export const payWithdrawal = async (req: Request, res: Response) => {
     if (!isAdminUser(req.session?.user)) return res.status(403).end();
     const id = Number(req.params.id);
@@ -71,15 +72,6 @@ export const payWithdrawal = async (req: Request, res: Response) => {
     if (!w) return res.status(404).json({ error: "Withdrawal not found" });
     if (w.status !== "pending") return res.status(409).json({ error: `Already ${w.status}` });
 
-    // The player is being paid in fiat, so remove the cashed-out ARENA from their
-    // balance on-chain (burn from their custodial wallet). Don't mark paid if it fails.
-    if (isCustodyConfigured()) {
-        try {
-            await burnFromCustodial(w.user_id, Number(w.amount));
-        } catch (err) {
-            return res.status(502).json({ error: "Could not deduct tokens: " + (err as Error).message });
-        }
-    }
     await WithdrawalModel.setStatus(id, "paid", req.session!.user!.name || "admin");
     return res.json({ paid: true });
 };

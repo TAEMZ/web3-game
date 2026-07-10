@@ -9,6 +9,7 @@ import { activeGames } from "../db/models/game.model.js";
 import UserModel from "../db/models/user.model.js";
 import { isAdminUser } from "../util/admin.js";
 import { clientIp, isIpBanned, recordUserIp } from "../util/moderation.js";
+import { fundGasIfLow } from "../web3/gas.js";
 import { io } from "../server.js";
 
 export const getCurrentSession = async (req: Request, res: Response) => {
@@ -416,6 +417,9 @@ export const walletLogin = async (req: Request, res: Response) => {
         }
 
         req.session.walletNonce = undefined;
+
+        // Auto-fund the player's gas so they can sign bets without buying test-ETH.
+        void fundGasIfLow(address);
 
         // If the visitor is already signed in with a username account that has no
         // wallet yet, LINK this wallet to that account instead of creating a

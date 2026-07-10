@@ -3,7 +3,6 @@ import DepositModel from "../db/models/deposit.model.js";
 import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { mintReward, isTokenConfigured } from "../web3/arena.js";
-import { getOrCreateCustodial, isCustodyConfigured } from "../web3/custody.js";
 
 const MAX_TOPUP = Number(process.env.MAX_TOPUP ?? 100000); // sanity cap on a single request
 const isAddr = (a: unknown): a is string => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a);
@@ -61,18 +60,13 @@ export const approveDeposit = async (req: Request, res: Response) => {
     if (!deposit) return res.status(404).json({ error: "Deposit not found" });
     if (deposit.status !== "pending") return res.status(409).json({ error: `Already ${deposit.status}` });
 
-    // Release to the player's platform-custodial wallet so they can wager with it
-    // (falls back to the deposit's recorded wallet if custody isn't configured).
-    let wallet = deposit.wallet || (await walletOfUser(deposit.user_id));
+    // Release straight to the player's own (thirdweb) wallet.
+    const wallet = deposit.wallet || (await walletOfUser(deposit.user_id));
 
     let tx: string | null = null;
     if (isTokenConfigured()) {
-        if (isCustodyConfigured()) {
-            const acct = await getOrCreateCustodial(deposit.user_id);
-            wallet = acct.address;
-        }
         if (!wallet) {
-            return res.status(400).json({ error: "Player has no wallet — cannot release tokens" });
+            return res.status(400).json({ error: "Player hasn't connected a wallet yet — can't release tokens" });
         }
         tx = await mintReward(wallet, Number(deposit.amount));
         if (!tx) return res.status(502).json({ error: "On-chain mint failed — not marking approved" });

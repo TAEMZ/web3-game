@@ -2,8 +2,12 @@
 
 import { IconCoins, IconMedal, IconMedal2, IconStar, IconTrophy, IconArrowUpRight, IconArrowDownLeft, IconWallet } from "@tabler/icons-react";
 import { useContext, useEffect, useState } from "react";
+import { useActiveAccount } from "thirdweb/react";
+import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
+import { activeChain, thirdwebClient } from "@/lib/thirdweb";
+import { tokenContract, toArenaWei } from "@/lib/contracts";
 import { useRouter } from "next/navigation";
 
 interface Achievement {
@@ -54,6 +58,7 @@ interface Withdrawal {
 export default function RewardsPage() {
   const session = useContext(SessionContext);
   const router = useRouter();
+  const account = useActiveAccount();
   const [rewards, setRewards] = useState<RewardsData | null>(null);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
@@ -142,8 +147,20 @@ export default function RewardsPage() {
     setWNotice(null);
     if (!(wAmt > 0)) return setWNotice("Enter an amount greater than 0.");
     if (wAmt > balance) return setWNotice(`You only have ${balance} ARENA.`);
+    if (!account) return setWNotice("Connect your wallet (top-right) to cash out.");
     setWSubmitting(true);
     try {
+      // Player owns their tokens, so cashing out burns them from their own wallet
+      // (they sign it). The admin then sends the cash and marks it paid.
+      setWNotice("Confirm the cash-out in your wallet…");
+      const burnTx = prepareContractCall({
+        contract: tokenContract,
+        method: "function burn(uint256 amount)",
+        params: [toArenaWei(wAmt)],
+      });
+      const { transactionHash } = await sendTransaction({ transaction: burnTx, account });
+      await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash });
+
       const res = await fetch(`${API_URL}/v1/withdrawals`, {
         method: "POST",
         credentials: "include",
@@ -151,7 +168,7 @@ export default function RewardsPage() {
         body: JSON.stringify({ amount: wAmt, payoutTo }),
       });
       if (res.ok) {
-        setWNotice("Cash-out requested! An admin will review it and mark it paid.");
+        setWNotice("Cash-out requested! Your ARENA was burned; an admin will send the cash and mark it paid.");
         setWAmount("");
         setPayoutTo("");
         await load();
@@ -159,6 +176,8 @@ export default function RewardsPage() {
         const err = await res.json().catch(() => ({}));
         setWNotice(err.error || "Could not submit request.");
       }
+    } catch (err) {
+      setWNotice((err as Error)?.message?.slice(0, 140) || "Cash-out failed.");
     } finally {
       setWSubmitting(false);
     }

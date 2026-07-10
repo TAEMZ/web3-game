@@ -3,15 +3,15 @@
 import type { User } from "@arena/types";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { ThirdwebProvider } from "thirdweb/react";
 
+import WalletAuth from "@/components/wallet/WalletAuth";
 import { fetchSession } from "@/lib/auth";
 import { SessionContext } from "./session";
 
-// NOTE: Wallets are platform-CUSTODIAL (Option 1) — the platform holds each
-// player's wallet and stakes/settles on their behalf. Players never connect an
-// external wallet, so the old thirdweb ThirdwebProvider + <WalletAuth /> (which
-// auto-linked any connected wallet and could overwrite the custodial wallet) are
-// intentionally removed.
+// Players own their wallet via thirdweb (Google in-app wallet). <WalletAuth />
+// bridges a connected wallet to a server session; the wallet address becomes the
+// player's on-chain identity for rewards, betting, and withdrawals.
 export default function ContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>({});
 
@@ -25,8 +25,11 @@ export default function ContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SessionContext.Provider value={{ user, setUser }}>
-      {children}
-    </SessionContext.Provider>
+    <ThirdwebProvider>
+      <SessionContext.Provider value={{ user, setUser }}>
+        <WalletAuth />
+        {children}
+      </SessionContext.Provider>
+    </ThirdwebProvider>
   );
 }

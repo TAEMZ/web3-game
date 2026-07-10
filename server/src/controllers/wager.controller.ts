@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
 import { activeGames } from "../db/models/game.model.js";
 import WagerModel from "../db/models/wager.model.js";
+import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { withKeyLock } from "../util/locks.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../web3/arena.js";
-import { stakeCreateMatch, stakeJoinMatch, isCustodyConfigured } from "../web3/custody.js";
 
 const isAddr = (a: unknown): a is string => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a);
 
@@ -16,34 +16,35 @@ const gameParticipant = (gameCode: string, userId: number) => {
     return isPlayer ? game : null;
 };
 
-// Player1 creates a wager. The platform stakes their ARENA into the escrow ON
-// their behalf (custodial) — the player never signs or pays gas.
+const walletOfUser = async (userId: number): Promise<string | null> => {
+    const r = await db.query(`SELECT wallet_address FROM "user" WHERE id=$1`, [userId]);
+    return r.rowCount && r.rows[0].wallet_address ? (r.rows[0].wallet_address as string) : null;
+};
+
+// Player1 has ALREADY staked on-chain from their own wallet (approve + createMatch
+// via thirdweb) and passes the resulting matchId. The server just records it.
 export const createWager = async (req: Request, res: Response) => {
     const userId = req.session?.user?.id;
     if (!userId || typeof userId !== "number") return res.status(401).end();
-    if (!isCustodyConfigured()) return res.status(503).json({ error: "On-chain wagers not configured" });
 
-    const { gameCode } = req.body;
+    const { gameCode, wallet } = req.body;
+    const matchId = Number(req.body.matchId);
     const stake = Number(req.body.stake);
-    if (!gameCode || !(stake > 0)) return res.status(400).json({ error: "gameCode and stake required" });
+    if (!gameCode || !Number.isInteger(matchId) || !(stake > 0) || !isAddr(wallet)) {
+        return res.status(400).json({ error: "gameCode, matchId, stake, wallet required" });
+    }
     if (!gameParticipant(gameCode, userId)) return res.status(403).json({ error: "Not a player in that game" });
+    const myWallet = await walletOfUser(userId);
+    if (!myWallet || myWallet.toLowerCase() !== wallet.toLowerCase()) {
+        return res.status(403).json({ error: "Wallet does not match your linked wallet" });
+    }
 
-    // Serialize per game so two players can't both create + double-stake at once.
     try {
         const result = await withKeyLock(`wager:${gameCode}`, async () => {
-            // Reserve immediately so the opponent's UI disables their bet button.
-            const pending = await WagerModel.createPending(gameCode, userId, stake);
-            if (!pending) return { code: 409, body: { error: "A wager already exists for this game" } };
-            try {
-                const staked = await stakeCreateMatch(userId, stake); // on-chain: create the match
-                if (!staked) throw new Error("Failed to stake on-chain");
-                const wager = await WagerModel.activate(gameCode, staked.matchId, staked.wallet);
-                if (!wager) throw new Error("Failed to record wager");
-                return { code: 201, body: { wager } };
-            } catch (err) {
-                await WagerModel.deletePending(gameCode); // roll back the reservation
-                return { code: 502, body: { error: (err as Error).message } };
-            }
+            if (await WagerModel.findByGameCode(gameCode)) return { code: 409, body: { error: "A wager already exists for this game" } };
+            const wager = await WagerModel.create({ gameCode, matchId, stake, p1UserId: userId, p1Wallet: wallet });
+            if (!wager) return { code: 500, body: { error: "Failed to record wager" } };
+            return { code: 201, body: { wager } };
         });
         return res.status(result.code).json(result.body);
     } catch (err) {
@@ -51,16 +52,18 @@ export const createWager = async (req: Request, res: Response) => {
     }
 };
 
-// Player2 accepts the wager. The platform matches the stake on their behalf.
+// Player2 has ALREADY matched the stake on-chain (approve + joinMatch). Record it.
 export const joinWager = async (req: Request, res: Response) => {
     const userId = req.session?.user?.id;
     if (!userId || typeof userId !== "number") return res.status(401).end();
-    if (!isCustodyConfigured()) return res.status(503).json({ error: "On-chain wagers not configured" });
 
-    const { gameCode } = req.body;
-    if (!gameCode) return res.status(400).json({ error: "gameCode required" });
+    const { gameCode, wallet } = req.body;
+    if (!gameCode || !isAddr(wallet)) return res.status(400).json({ error: "gameCode, wallet required" });
+    const myWallet = await walletOfUser(userId);
+    if (!myWallet || myWallet.toLowerCase() !== wallet.toLowerCase()) {
+        return res.status(403).json({ error: "Wallet does not match your linked wallet" });
+    }
 
-    // Same per-game lock: prevents a double-join racing the create/settle.
     try {
         const result = await withKeyLock(`wager:${gameCode}`, async () => {
             const wager = await WagerModel.findByGameCode(gameCode);
@@ -68,9 +71,7 @@ export const joinWager = async (req: Request, res: Response) => {
             if (wager.state !== "open") return { code: 409, body: { error: `Wager is '${wager.state}'` } };
             if (!gameParticipant(wager.game_code, userId)) return { code: 403, body: { error: "Not a player in that game" } };
             if (userId === wager.p1_user_id) return { code: 400, body: { error: "Cannot join your own wager" } };
-            const staked = await stakeJoinMatch(userId, wager.match_id, Number(wager.stake));
-            if (!staked) return { code: 502, body: { error: "Failed to stake on-chain" } };
-            const updated = await WagerModel.join(wager.match_id, userId, staked.wallet);
+            const updated = await WagerModel.join(wager.match_id, userId, wallet);
             if (!updated) return { code: 409, body: { error: "Wager not open to join" } };
             return { code: 200, body: { wager: updated } };
         });
@@ -86,7 +87,8 @@ export const getWager = async (req: Request, res: Response) => {
     return res.json({ wager });
 };
 
-// Admin override: manually settle a wager (dispute / stuck game).
+// The winner is paid by the server (it holds SETTLER_ROLE) — auto on game-over
+// (WagerModel.settleForGame), and this admin override handles disputes/stuck games.
 export const adminSettleWager = async (req: Request, res: Response) => {
     if (!isAdminUser(req.session?.user)) return res.status(403).end();
     if (!isEscrowConfigured()) return res.status(503).json({ error: "Escrow not deployed" });
