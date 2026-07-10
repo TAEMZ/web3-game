@@ -56,7 +56,7 @@ export default function VictoryRewards({
         style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}
       >
         {/* Ethiopian tricolor accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-600" />
+        <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
 
         {/* Victory Header */}
         <div className="text-center mb-6">

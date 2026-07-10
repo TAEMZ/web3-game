@@ -32,6 +32,9 @@ import VideoChat from "./VideoChat";
 import GameOverModal from "./GameOverModal";
 import ReportModal from "./ReportModal";
 import WagerPanel from "./WagerPanel";
+import BoardThemePicker from "./BoardThemePicker";
+import { ethiopianPieces } from "./pieces";
+import { defaultBoardTheme, getBoardTheme, type BoardTheme } from "@/lib/boardThemes";
 
 // ARENA docked for resigning; mirrors RESIGN_PENALTY in the server rewards controller.
 const RESIGN_PENALTY = 25;
@@ -60,6 +63,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
 
   const [moveFrom, setMoveFrom] = useState<string | Square | null>(null);
   const [boardWidth, setBoardWidth] = useState(480);
+  const [boardTheme, setBoardTheme] = useState<BoardTheme>(defaultBoardTheme());
   const chessboardRef = useRef<ClearPremoves>(null);
 
   const [navFen, setNavFen] = useState<string | null>(null);
@@ -157,6 +161,11 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       socket.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Player-chosen board colours (client preference, no backend).
+  useEffect(() => {
+    setBoardTheme(getBoardTheme());
   }, []);
 
   // auto scroll down when new message is added
@@ -689,8 +698,9 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
           <div className="mx-auto w-fit overflow-hidden rounded-lg">
             <Chessboard
               boardWidth={boardWidth}
-              customDarkSquareStyle={{ backgroundColor: "#4b7399" }}
-              customLightSquareStyle={{ backgroundColor: "#eae9d2" }}
+              customPieces={ethiopianPieces}
+              customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+              customLightSquareStyle={{ backgroundColor: boardTheme.light }}
               position={navFen || lobby.actualGame.fen()}
               boardOrientation={lobby.side === "b" ? "black" : "white"}
               isDraggablePiece={isDraggablePiece}
@@ -724,6 +734,8 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             </button>
           ))}
         </div>
+
+        <BoardThemePicker theme={boardTheme} onChange={setBoardTheme} />
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:w-[344px]">

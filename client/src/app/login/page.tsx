@@ -66,7 +66,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex w-full min-h-screen items-center justify-center px-4 py-12 ethiopian-pattern">
+    <div className="flex w-full min-h-screen items-center justify-center px-4 py-12 chess-bg">
       <div
         className="glass-dark animate-fade-in-up w-full max-w-md p-10"
         style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}

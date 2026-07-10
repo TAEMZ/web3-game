@@ -90,7 +90,7 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   ];
 
   return (
-    <>
+    <div className="chess-bg min-h-[calc(100vh-57px)]">
       <div className="animate-fade-in-up mx-auto w-full max-w-5xl px-4 py-8">
         {/* ── Hero: who you are + your record ── */}
         <section
@@ -231,6 +231,6 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
           {publicGames}
         </div>
       </div>
-    </>
+    </div>
   );
 }

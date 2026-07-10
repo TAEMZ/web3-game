@@ -170,11 +170,33 @@ body {
   text-transform: uppercase;
 }
 
-/* ── Tricolor accent ── */
+/* ── Gold accent bar (was the flag tricolor) ── */
 .tricolor-bar {
-  height: 3px;
-  background: linear-gradient(90deg, #078307 0%, #078307 33%, #d4af37 33%, #d4af37 66%, #da1212 66%, #da1212 100%);
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(154, 122, 24, 0.7) 12%, #e8c040 50%, rgba(154, 122, 24, 0.7) 88%, transparent 100%);
   border-radius: 99px;
+}
+
+/* ── Faint chessboard backdrop (login + dashboard) ── */
+.chess-bg {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% -5%, rgba(201, 162, 39, 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 65% 50% at 50% 105%, rgba(26, 107, 63, 0.1) 0%, transparent 58%),
+    var(--c-bg);
+}
+.chess-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: repeating-conic-gradient(rgba(201, 162, 39, 0.05) 0% 25%, transparent 0% 50%);
+  background-size: 128px 128px;
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 32%, #000 12%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 75% at 50% 32%, #000 12%, transparent 78%);
+  pointer-events: none;
 }
 
 /* ── Animations ── */

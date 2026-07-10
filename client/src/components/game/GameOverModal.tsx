@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Game } from "@arena/types";
 import { API_URL } from "@/config";
 
@@ -116,7 +116,7 @@ export default function GameOverModal({
 
   const rt = reasonText(reason);
 
-  let icon = "♟️";
+  let icon: ReactNode = "♟️";
   let title = "Game Over";
   let titleColor = "#E8C040";
   let subtitle = "";
@@ -135,7 +135,19 @@ export default function GameOverModal({
       titleColor = "#e06666";
       subtitle = "You left the game — it counts as a loss.";
     } else {
-      icon = "💔";
+      // A toppled king on the ground — the classic gesture of defeat.
+      icon = (
+        <span
+          className="inline-block"
+          style={{
+            transform: "rotate(80deg)",
+            color: "#9a5252",
+            filter: "drop-shadow(0 10px 6px rgba(0,0,0,0.55))",
+          }}
+        >
+          ♚
+        </span>
+      );
       title = "Defeat";
       titleColor = "#e06666";
       subtitle = winnerName ? `${winnerName} won ${rt}.` : `You lost ${rt}.`;
@@ -182,7 +194,7 @@ export default function GameOverModal({
         className="glass-dark animate-fade-in-up w-full max-w-md p-6 md:p-8 relative overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}
       >
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-600" />
+        <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
 
         <div className="text-center mb-6">
           <div className="text-7xl mb-4">{icon}</div>
