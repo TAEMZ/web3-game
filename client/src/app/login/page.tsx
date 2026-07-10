@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 
 import { SessionContext } from "@/context/session";
 import { login, register, setGuestSession } from "@/lib/auth";
+import WalletButton from "@/components/wallet/WalletButton";
 
 type ViewMode = "login" | "signup" | "guest";
 
@@ -66,7 +67,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex w-full min-h-screen items-center justify-center px-4 py-12 chess-bg">
+    <div className="chess-bg ge-pattern flex w-full min-h-screen items-center justify-center px-4 py-12">
       <div
         className="glass-dark animate-fade-in-up w-full max-w-md p-10"
         style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}
@@ -121,6 +122,15 @@ export default function LoginPage() {
             <button className="btn-gold mt-2" type="submit" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </button>
+
+            <div className="my-4 flex items-center gap-3">
+              <span className="h-px flex-1 bg-[rgba(201,162,39,0.15)]" />
+              <span className="text-[0.62rem] uppercase tracking-wider text-[rgba(216,204,176,0.35)]">
+                or connect a wallet
+              </span>
+              <span className="h-px flex-1 bg-[rgba(201,162,39,0.15)]" />
+            </div>
+            <WalletButton />
 
             <div className="mt-4 space-y-2 text-center text-sm">
               <button

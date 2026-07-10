@@ -40,6 +40,41 @@ function reasonText(reason: Game["endReason"]): string {
 const WIN_REWARD = 50;
 const DRAW_REWARD = 10;
 
+// Gold crown haloed by a gold glow + slow green swirl.
+function VictoryHero() {
+  return (
+    <div className="relative grid h-28 w-28 place-items-center">
+      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 65%)" }} />
+      <div
+        className="absolute inset-[-10%] rounded-full animate-spin"
+        style={{ animationDuration: "9s", background: "conic-gradient(from 0deg, transparent, rgba(26,107,63,0.4), transparent 55%, rgba(201,162,39,0.25), transparent 90%)" }}
+      />
+      <span className="relative font-display text-7xl" style={{ color: "#f5d970", filter: "drop-shadow(0 0 16px rgba(201,162,39,0.85))" }}>
+        ♔
+      </span>
+    </div>
+  );
+}
+
+// Toppled king on the ground with a red glow — the classic sign of defeat.
+function FallenKingHero({ resigned }: { resigned?: boolean }) {
+  return (
+    <div className="relative grid h-28 w-28 place-items-center">
+      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgba(184,24,24,0.32) 0%, transparent 65%)" }} />
+      <span
+        className="relative inline-block text-7xl"
+        style={{
+          transform: resigned ? "none" : "rotate(82deg)",
+          color: resigned ? "#d8ccb0" : "#7a2b2b",
+          filter: "drop-shadow(0 9px 6px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgba(184,24,24,0.55))",
+        }}
+      >
+        {resigned ? "🏳️" : "♚"}
+      </span>
+    </div>
+  );
+}
+
 export default function GameOverModal({
   outcome,
   reason,
@@ -63,8 +98,6 @@ export default function GameOverModal({
     }
   }, [outcome]);
 
-  // Poll the real balance (+ wager result) — the on-chain settle lands a few
-  // seconds after the game ends, so we refresh a handful of times.
   useEffect(() => {
     if (outcome === "spectator") return;
     let active = true;
@@ -115,48 +148,47 @@ export default function GameOverModal({
   }, [outcome, gameCode]);
 
   const rt = reasonText(reason);
+  const isCheckmate = reason === "checkmate";
 
-  let icon: ReactNode = "♟️";
+  // ── Per-outcome theme ──
   let title = "Game Over";
   let titleColor = "#E8C040";
+  let glow = "rgba(201,162,39,0.5)";
+  let panelBg = "rgba(13,22,18,0.94)";
+  let border = "rgba(201,162,39,0.3)";
+  let hero: ReactNode = <span className="text-7xl opacity-70">♟️</span>;
   let subtitle = "";
+
   if (outcome === "win") {
-    icon = "🏆";
     title = "Victory!";
+    titleColor = "#f5d970";
+    glow = "rgba(201,162,39,0.6)";
+    panelBg = "linear-gradient(180deg, rgba(15,50,34,0.96) 0%, rgba(13,22,18,0.96) 60%)";
+    border = "rgba(201,162,39,0.42)";
+    hero = <VictoryHero />;
     subtitle = reason === "resignation" ? "Your opponent resigned." : `You won ${rt}.`;
   } else if (outcome === "draw") {
-    icon = "🤝";
     title = "Draw";
+    hero = <span className="text-7xl">🤝</span>;
     subtitle = rt ? `The game ended in a draw ${rt}.` : "The game ended in a draw.";
   } else if (outcome === "loss") {
+    titleColor = "#e06666";
+    glow = "rgba(184,24,24,0.45)";
+    panelBg = "linear-gradient(180deg, rgba(42,16,16,0.96) 0%, rgba(13,22,18,0.96) 62%)";
+    border = "rgba(184,24,24,0.42)";
     if (didResign) {
-      icon = "🏳️";
       title = "You Resigned";
-      titleColor = "#e06666";
+      hero = <FallenKingHero resigned />;
       subtitle = "You left the game — it counts as a loss.";
     } else {
-      // A toppled king on the ground — the classic gesture of defeat.
-      icon = (
-        <span
-          className="inline-block"
-          style={{
-            transform: "rotate(80deg)",
-            color: "#9a5252",
-            filter: "drop-shadow(0 10px 6px rgba(0,0,0,0.55))",
-          }}
-        >
-          ♚
-        </span>
-      );
-      title = "Defeat";
-      titleColor = "#e06666";
+      title = isCheckmate ? "Checkmate" : "Defeat";
+      hero = <FallenKingHero />;
       subtitle = winnerName ? `${winnerName} won ${rt}.` : `You lost ${rt}.`;
     }
   } else {
     subtitle = winnerName ? `${winnerName} won ${rt}.` : "The game ended in a draw.";
   }
 
-  // Build the line-by-line ARENA changes for this game.
   const lines: { label: string; value: number }[] = [];
   if (outcome === "win") {
     if (wagerResult === "won" && wagerStake) lines.push({ label: "Wager winnings", value: wagerStake });
@@ -170,13 +202,13 @@ export default function GameOverModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm">
       {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
           {[...Array(45)].map((_, i) => (
             <div
               key={i}
-              className="absolute animate-fall"
+              className="animate-fall absolute"
               style={{
                 left: `${(i * 2.2) % 100}%`,
                 top: "-10px",
@@ -191,22 +223,21 @@ export default function GameOverModal({
       )}
 
       <div
-        className="glass-dark animate-fade-in-up w-full max-w-md p-6 md:p-8 relative overflow-hidden max-h-[95vh] overflow-y-auto"
-        style={{ border: "1px solid rgba(201,162,39,0.3)", borderRadius: 24 }}
+        className="ge-pattern animate-fade-in-up relative max-h-[95vh] w-full max-w-md overflow-y-auto p-6 md:p-8"
+        style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 24 }}
       >
         <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
 
-        <div className="text-center mb-6">
-          <div className="text-7xl mb-4">{icon}</div>
-          <h2 className="font-display text-3xl font-bold mb-2" style={{ color: titleColor }}>
+        <div className="mb-6 text-center">
+          <div className="mb-3 flex justify-center">{hero}</div>
+          <h2 className="font-display mb-2 text-4xl font-black" style={{ color: titleColor, textShadow: `0 0 26px ${glow}` }}>
             {title}
           </h2>
           <p className="text-base text-[rgba(216,204,176,0.8)]">{subtitle}</p>
         </div>
 
-        {/* ARENA breakdown + new balance */}
         {outcome !== "spectator" && (
-          <div className="mb-6 rounded-xl bg-[rgba(201,162,39,0.06)] border border-[rgba(201,162,39,0.2)] p-4">
+          <div className="mb-6 rounded-xl border p-4" style={{ background: "rgba(0,0,0,0.28)", borderColor: border }}>
             <div className="space-y-1.5">
               {lines.map((l) => (
                 <div key={l.label} className="flex items-center justify-between text-sm">
@@ -227,7 +258,7 @@ export default function GameOverModal({
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-[rgba(201,162,39,0.15)] pt-3">
               <span className="text-sm font-semibold text-[#E8C040]">New balance</span>
-              <span className="text-lg font-bold text-[#E8C040] tabular-nums">
+              <span className="text-lg font-bold tabular-nums text-[#E8C040]">
                 {balance === null ? "…" : `${balance} ARENA`}
               </span>
             </div>
@@ -240,14 +271,15 @@ export default function GameOverModal({
         <div className="flex flex-col gap-2">
           <a
             href="/"
-            className="w-full py-3 rounded-lg bg-[#E8C040] text-[#1a0f0a] font-semibold text-center hover:bg-[#d4af3a] transition-colors"
+            className="w-full rounded-lg py-3 text-center font-semibold text-[#1a0f0a] transition-transform hover:-translate-y-0.5"
+            style={{ background: "linear-gradient(135deg,#e8c040,#c9a227 55%,#9a7a18)", boxShadow: "0 4px 18px rgba(201,162,39,0.35)" }}
           >
-            Back to Lobby
+            Play Again
           </a>
           {gameId ? (
             <a
               href={`/archive/${gameId}`}
-              className="w-full py-3 rounded-lg bg-[rgba(201,162,39,0.15)] hover:bg-[rgba(201,162,39,0.25)] text-[#E8C040] font-semibold text-center transition-colors"
+              className="w-full rounded-lg border border-[rgba(201,162,39,0.3)] bg-[rgba(201,162,39,0.08)] py-3 text-center font-semibold text-[#E8C040] transition-colors hover:bg-[rgba(201,162,39,0.18)]"
             >
               Review Game
             </a>

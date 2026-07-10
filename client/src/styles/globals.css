@@ -177,6 +177,26 @@ body {
   border-radius: 99px;
 }
 
+/* ── Ethiopian woven geometric lattice (subtle overlay) ── */
+.ge-pattern {
+  position: relative;
+  isolation: isolate;
+}
+.ge-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(201, 162, 39, 0.07) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(-45deg, rgba(201, 162, 39, 0.07) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(45deg, rgba(26, 107, 63, 0.06) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(-45deg, rgba(26, 107, 63, 0.06) 0 1px, transparent 1px 40px);
+  -webkit-mask-image: radial-gradient(ellipse 82% 70% at 50% 28%, #000 18%, transparent 82%);
+  mask-image: radial-gradient(ellipse 82% 70% at 50% 28%, #000 18%, transparent 82%);
+  pointer-events: none;
+}
+
 /* ── Faint chessboard backdrop (login + dashboard) ── */
 .chess-bg {
   position: relative;
