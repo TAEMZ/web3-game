@@ -6,6 +6,7 @@ import { useContext } from "react";
 
 import { SessionContext } from "@/context/session";
 import { logout } from "@/lib/auth";
+import WalletButton from "../wallet/WalletButton";
 
 export default function HeaderAuth() {
   const session = useContext(SessionContext);
@@ -38,9 +39,18 @@ export default function HeaderAuth() {
       </label>
       <ul
         tabIndex={0}
-        className="dropdown-content glass-dark z-50 mt-2 flex w-48 flex-col gap-1 rounded-xl p-2"
+        className="dropdown-content glass-dark z-50 mt-2 flex w-60 flex-col gap-1 rounded-xl p-2"
         style={{ border: "1px solid rgba(201,162,39,0.25)" }}
       >
+        {/* Wallet = token storage tied to this account. Connect/manage it here. */}
+        <li className="px-1 pb-1">
+          <p className="mb-1 px-1 text-[0.6rem] font-semibold uppercase tracking-wider text-[rgba(216,204,176,0.4)]">
+            Wallet
+          </p>
+          <WalletButton />
+        </li>
+        <div className="mx-1 my-1 h-px bg-[rgba(201,162,39,0.12)]" />
+
         {typeof user.id === "number" && (
           <>
             <li>

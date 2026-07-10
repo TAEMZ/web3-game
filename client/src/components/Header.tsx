@@ -3,7 +3,6 @@ import Link from "next/link";
 import HeaderAuth from "./auth/HeaderAuth";
 import HeaderNav from "./HeaderNav";
 import ThemeToggle from "./ThemeToggle";
-import WalletButton from "./wallet/WalletButton";
 
 export default function Header() {
   return (
@@ -25,9 +24,6 @@ export default function Header() {
       </nav>
 
       <div className="flex flex-none items-center gap-2">
-        <div className="hidden sm:block">
-          <WalletButton />
-        </div>
         <ThemeToggle />
         <HeaderAuth />
       </div>
