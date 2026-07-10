@@ -1,6 +1,7 @@
 import type { Game } from "@arena/types";
 import { db } from "../index.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../../web3/arena.js";
+import * as SettlementQueue from "./settlement-queue.js";
 
 const HOUSE_FEE_PERCENT = Number(process.env.HOUSE_FEE_PERCENT || "15");
 
@@ -138,6 +139,7 @@ export const listAll = async (status?: string): Promise<Wager[]> => {
 // Auto-settle a wager when its game ends: the server (SETTLER_ROLE) reports the
 // result to the escrow, which releases the pot to the winner (minus the platform
 // fee) or refunds a draw (no fee).
+// If the on-chain call fails, the job is enqueued for automatic retry.
 // No-op unless the escrow is deployed and the wager is fully funded (both staked).
 export const settleForGame = async (game: Game): Promise<void> => {
     try {
@@ -147,7 +149,11 @@ export const settleForGame = async (game: Game): Promise<void> => {
 
         if (game.winner === "draw") {
             const tx = await settleWagerDraw(w.match_id);
-            await markSettled(w.id, null, tx, 0);
+            if (tx) {
+                await markSettled(w.id, null, tx, 0);
+            } else {
+                await SettlementQueue.enqueue(w.id, w.match_id, "draw", null);
+            }
         } else if (game.winner === "white" || game.winner === "black") {
             const winnerUserId = game.winner === "white" ? game.white?.id : game.black?.id;
             let wallet: string | null = null;
@@ -159,7 +165,11 @@ export const settleForGame = async (game: Game): Promise<void> => {
             }
             const feeAmount = Math.floor(w.stake * 2 * HOUSE_FEE_PERCENT / 100);
             const tx = await settleWager(w.match_id, wallet);
-            await markSettled(w.id, wallet, tx, feeAmount);
+            if (tx) {
+                await markSettled(w.id, wallet, tx, feeAmount);
+            } else {
+                await SettlementQueue.enqueue(w.id, w.match_id, "win", wallet);
+            }
         }
     } catch (err) {
         console.error("[web3] settleForGame error:", (err as Error).message);
