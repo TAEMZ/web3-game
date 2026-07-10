@@ -17,6 +17,7 @@ import { SessionContext } from "@/context/session";
 interface Player {
   id: number;
   name: string;
+  email: string | null;
   wallet: string | null;
   wins: number;
   losses: number;
@@ -25,6 +26,7 @@ interface Player {
   isAdmin: boolean;
   banned: boolean;
   lastIp: string | null;
+  createdAt: string;
 }
 interface Overview {
   players: number;
@@ -60,6 +62,7 @@ interface Withdrawal {
   user_name: string;
   amount: string;
   usd: string | null;
+  birr: number | null;
   payout_to: string | null;
   status: string;
   created_at: string;
@@ -71,6 +74,19 @@ interface SubReq {
   wallet: string | null;
   tx: string | null;
   status: string;
+  created_at: string;
+}
+interface Wager {
+  id: number;
+  game_code: string;
+  match_id: number | null;
+  stake: number;
+  p1_wallet: string | null;
+  p2_wallet: string | null;
+  state: string;
+  winner_wallet: string | null;
+  fee_amount: number;
+  settle_tx: string | null;
   created_at: string;
 }
 
