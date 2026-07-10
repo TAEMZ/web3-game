@@ -151,4 +151,22 @@ export const INIT_TABLES = /* sql */ `
     CREATE INDEX IF NOT EXISTS idx_game_ended_at ON "game"(ended_at DESC);
     CREATE INDEX IF NOT EXISTS idx_user_wallet ON "user"(wallet_address);
     CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
+
+    -- Settlement retry queue: on-chain settlement failures are stored here
+    -- and retried automatically until they succeed or hit max retries.
+    CREATE TABLE IF NOT EXISTS "settlement_queue" (
+        id SERIAL PRIMARY KEY,
+        wager_id INTEGER REFERENCES "wager"(id),
+        match_id INTEGER NOT NULL,
+        kind VARCHAR(16) NOT NULL,             -- 'win' or 'draw'
+        winner_wallet VARCHAR(64),             -- null for draws
+        retries INTEGER DEFAULT 0,
+        max_retries INTEGER DEFAULT 5,
+        next_retry_at TIMESTAMP DEFAULT NOW(),
+        last_error TEXT,
+        settled_tx VARCHAR(80),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_sq_pending ON "settlement_queue"(next_retry_at)
+        WHERE settled_tx IS NULL;
 `;
