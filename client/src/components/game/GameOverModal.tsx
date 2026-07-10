@@ -193,7 +193,10 @@ export default function GameOverModal({
 
   const lines: { label: string; value: number }[] = [];
   if (outcome === "win") {
-    if (wagerResult === "won" && wagerStake) lines.push({ label: "Wager winnings", value: wagerStake });
+    if (wagerResult === "won" && wagerStake) {
+      const netProfit = Math.floor(wagerStake * 2 * (1 - HOUSE_FEE_PERCENT / 100)) - wagerStake;
+      lines.push({ label: "Wager winnings", value: netProfit });
+    }
     lines.push({ label: "Win reward", value: WIN_REWARD });
   } else if (outcome === "draw") {
     if (wagerStake) lines.push({ label: "Wager refunded", value: 0 });

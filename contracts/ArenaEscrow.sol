@@ -94,7 +94,7 @@ contract ArenaEscrow is AccessControl, ReentrancyGuard {
         require(winner == m.player1 || winner == m.player2, "winner not in match");
         m.state = State.SETTLED;
         uint256 pot = m.stake * 2;
-        uint265 fee = (pot * feePercent) / 100;
+        uint256 fee = (pot * feePercent) / 100;
         uint256 payout = pot - fee;
         if (fee > 0) {
             require(token.transfer(treasury, fee), "fee transfer failed");
