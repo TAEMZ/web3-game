@@ -1,6 +1,32 @@
 import { API_URL } from "@/config";
 import type { User } from "@arena/types";
 
+// After an explicit logout we keep the wallet CONNECTED, but must stop <WalletAuth>
+// from silently re-authenticating from it (that was the "logout bounces me back"
+// bug). This flag suppresses that auto-login until the user deliberately signs in.
+const SIGNED_OUT_KEY = "chess:signedOut";
+export const markSignedOut = () => {
+    try {
+        localStorage.setItem(SIGNED_OUT_KEY, "1");
+    } catch {
+        /* ignore */
+    }
+};
+export const clearSignedOut = () => {
+    try {
+        localStorage.removeItem(SIGNED_OUT_KEY);
+    } catch {
+        /* ignore */
+    }
+};
+export const isSignedOut = () => {
+    try {
+        return localStorage.getItem(SIGNED_OUT_KEY) === "1";
+    } catch {
+        return false;
+    }
+};
+
 export const fetchSession = async () => {
     try {
         const res = await fetch(`${API_URL}/v1/auth`, {
@@ -28,6 +54,7 @@ export const setGuestSession = async (name: string) => {
         });
         if (res.status === 201) {
             const user: User = await res.json();
+            clearSignedOut();
             return user;
         }
     } catch (err) {
@@ -47,6 +74,7 @@ export const register = async (name: string, password: string, email?: string) =
         });
         if (res.status === 201) {
             const user: User = await res.json();
+            clearSignedOut();
             return user;
         } else if (res.status === 409) {
             const { message } = await res.json();
@@ -69,6 +97,7 @@ export const login = async (name: string, password: string) => {
         });
         if (res.status === 200) {
             const user: User = await res.json();
+            clearSignedOut();
             return user;
         } else if (res.status === 404 || res.status === 401) {
             const { message } = await res.json();

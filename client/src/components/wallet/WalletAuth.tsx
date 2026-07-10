@@ -4,7 +4,7 @@ import { useContext, useEffect, useRef } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
 import { SessionContext } from "@/context/session";
-import { walletLogin } from "@/lib/auth";
+import { isSignedOut, walletLogin } from "@/lib/auth";
 
 // Bridges a connected thirdweb wallet to a server session: when a wallet is
 // connected and we're not already signed in as it, ask for a signature and log in.
@@ -20,6 +20,9 @@ export default function WalletAuth() {
     // loading) so a reconnected wallet can't act before we know who's signed in.
     if (user === undefined) return;
     if (user && Object.keys(user).length === 0) return;
+    // The user explicitly logged out — keep the wallet connected, but don't
+    // re-authenticate from it until they deliberately sign in again.
+    if (isSignedOut()) return;
     // Admins don't use wallets. A stale wallet auto-reconnecting from a previous
     // player must never bridge into (and hijack/merge) an admin session.
     if (user?.is_admin) return;

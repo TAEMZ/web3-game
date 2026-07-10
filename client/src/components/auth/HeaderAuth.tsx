@@ -3,23 +3,19 @@
 import { IconLogout, IconSettings2, IconUserCircle } from "@tabler/icons-react";
 import Link from "next/link";
 import { useContext } from "react";
-import { useActiveWallet, useDisconnect } from "thirdweb/react";
 
 import { SessionContext } from "@/context/session";
-import { logout } from "@/lib/auth";
+import { logout, markSignedOut } from "@/lib/auth";
 import WalletButton from "../wallet/WalletButton";
 
 export default function HeaderAuth() {
   const session = useContext(SessionContext);
   const user = session?.user;
-  const wallet = useActiveWallet();
-  const { disconnect } = useDisconnect();
 
   async function clickLogout() {
-    // Disconnect the wallet FIRST — otherwise <WalletAuth> sees a still-connected
-    // wallet the moment the session clears and re-logs you straight back in
-    // (that's the "logout bounces me back" bug).
-    if (wallet) await disconnect(wallet);
+    // Keep the wallet connected — just flag that we deliberately signed out so
+    // <WalletAuth> won't re-authenticate from the still-connected wallet.
+    markSignedOut();
     await logout();
     session?.setUser(null);
   }
