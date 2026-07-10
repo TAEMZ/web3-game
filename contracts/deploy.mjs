@@ -54,10 +54,14 @@ async function main() {
   const tokenAddr = rc.contractAddress;
   console.log("✓ ArenaToken :", tokenAddr, "(tx", hash + ")");
 
-  // 2. ArenaEscrow(token)
+  // 2. ArenaEscrow(token, treasury, feePercent)
   const escrow = load("ArenaEscrow");
+  const treasury = env.ARENA_TREASURY_ADDRESS || account.address; // defaults to deployer
+  const feePercent = Number(env.HOUSE_FEE_PERCENT || "15");
   console.log("\nDeploying ArenaEscrow...");
-  hash = await wallet.deployContract({ abi: escrow.abi, bytecode: escrow.bytecode, args: [tokenAddr] });
+  console.log("  Treasury :", treasury);
+  console.log("  Fee      :", feePercent + "%");
+  hash = await wallet.deployContract({ abi: escrow.abi, bytecode: escrow.bytecode, args: [tokenAddr, treasury, BigInt(feePercent)] });
   rc = await pub.waitForTransactionReceipt({ hash });
   const escrowAddr = rc.contractAddress;
   console.log("✓ ArenaEscrow:", escrowAddr, "(tx", hash + ")");
