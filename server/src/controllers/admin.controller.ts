@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { db } from "../db/index.js";
 import UserModel from "../db/models/user.model.js";
+import WagerModel from "../db/models/wager.model.js";
 import { isAdminUser } from "../util/admin.js";
 
 const RESIGN_PENALTY = 25;
@@ -199,5 +200,16 @@ export async function resolveReport(req: Request, res: Response) {
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: "Failed to resolve" });
+    }
+}
+
+export async function listWagers(req: Request, res: Response) {
+    try {
+        const status = typeof req.query.status === "string" ? req.query.status : undefined;
+        const wagers = await WagerModel.listAll(status);
+        res.json({ wagers });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Failed to load wagers" });
     }
 }
