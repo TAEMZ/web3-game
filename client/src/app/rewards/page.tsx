@@ -7,7 +7,8 @@ import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { tokenContract, toArenaWei } from "@/lib/contracts";
+import { tokenContract, toArenaWei, EXCHANGE_RATE } from "@/lib/contracts";
+import ExchangeModal from "@/components/exchange/ExchangeModal";
 import { useRouter } from "next/navigation";
 
 interface Achievement {
@@ -37,16 +38,6 @@ interface RewardsData {
   stats: { wins: number; losses: number; draws: number; resignations?: number };
 }
 
-interface Deposit {
-  id: number;
-  amount: string;
-  method: string | null;
-  reference: string | null;
-  status: "pending" | "approved" | "rejected";
-  mint_tx: string | null;
-  created_at: string;
-}
-
 interface Withdrawal {
   id: number;
   amount: string;
@@ -60,16 +51,11 @@ export default function RewardsPage() {
   const router = useRouter();
   const account = useActiveAccount();
   const [rewards, setRewards] = useState<RewardsData | null>(null);
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // top-up form
-  const [amount, setAmount] = useState("");
-  const [reference, setReference] = useState("");
-  const [wallet, setWallet] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  // convert USD -> ARENA
+  const [showExchange, setShowExchange] = useState(false);
 
   // withdraw form
   const [wAmount, setWAmount] = useState("");
@@ -89,17 +75,14 @@ export default function RewardsPage() {
 
   async function load() {
     try {
-      const [r, d, w] = await Promise.all([
+      const [r, w] = await Promise.all([
         fetch(`${API_URL}/v1/rewards/user`, { credentials: "include" }),
-        fetch(`${API_URL}/v1/deposits/mine`, { credentials: "include" }),
         fetch(`${API_URL}/v1/withdrawals/mine`, { credentials: "include" }),
       ]);
       if (r.ok) {
         const data: RewardsData = await r.json();
         setRewards(data);
-        if (data.wallet) setWallet(data.wallet);
       }
-      if (d.ok) setDeposits((await d.json()).deposits || []);
       if (w.ok) setWithdrawals((await w.json()).withdrawals || []);
     } catch (e) {
       console.error(e);
@@ -109,38 +92,9 @@ export default function RewardsPage() {
   }
 
   const rate = rewards?.conversion;
-  const amt = Number(amount) || 0;
-  const previewUsd = rate ? (amt * rate.arenaToUsd).toFixed(2) : "0";
-
   const wAmt = Number(wAmount) || 0;
   const wUsd = rate ? (wAmt * rate.arenaToUsd).toFixed(2) : "0";
   const balance = rewards?.totalTokens ?? 0;
-
-  async function submitTopUp(e: React.FormEvent) {
-    e.preventDefault();
-    setNotice(null);
-    if (!(amt > 0)) return setNotice("Enter an amount greater than 0.");
-    setSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/v1/deposits`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amount: amt, method: "demo", reference, wallet: wallet || undefined }),
-      });
-      if (res.ok) {
-        setNotice("Request submitted! An admin will verify your payment and release your ARENA.");
-        setAmount("");
-        setReference("");
-        await load();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setNotice(err.error || "Could not submit request.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   async function submitWithdraw(e: React.FormEvent) {
     e.preventDefault();
@@ -196,7 +150,7 @@ export default function RewardsPage() {
     <main className="mx-auto w-full max-w-4xl px-4 py-8">
       <div className="mb-8 text-center">
         <h1 className="font-display mb-2 text-4xl font-bold gold-text-shimmer md:text-5xl">Your Wallet</h1>
-        <p className="text-[rgba(216,204,176,0.6)]">Your ARENA balance, top-ups, and achievements</p>
+        <p className="text-[rgba(216,204,176,0.6)]">Your ARENA balance, conversions, and achievements</p>
       </div>
 
       {/* Balance hero */}
@@ -242,93 +196,25 @@ export default function RewardsPage() {
             </span>
           ) : (
             <span className="text-[rgba(216,204,176,0.5)]">
-              No wallet linked — add one below to receive real tokens
+              No wallet linked — connect one in the account menu to hold tokens
             </span>
           )}
         </div>
       </div>
 
-      {/* Top-up */}
+      {/* Buy / convert USD -> ARENA */}
       <div className="glass-dark mb-6 rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
         <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[#E8C040]">
-          <IconArrowUpRight size={20} /> Top up ARENA
+          <IconArrowUpRight size={20} /> Buy ARENA
         </h2>
         <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Request ARENA to play wager matches. <span className="text-[#E8C040]">Demo only — no real payment.</span> An admin reviews your request and releases the tokens.
+          Convert your demo USD into ARENA to stake in wager matches. Your USDC is
+          <span className="text-[#E8C040]"> deducted</span> and ARENA lands in your wallet instantly —{" "}
+          <span className="text-[#E8C040]">{EXCHANGE_RATE} ARENA per $1</span>. All testnet play-money.
         </p>
-
-        <form onSubmit={submitTopUp} className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
-            Amount (ARENA)
-            <input
-              type="number"
-              min={1}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 500"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
-            Note (optional)
-            <input
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="demo — any note for the admin"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
-            Wallet to receive (0x…)
-            <input
-              value={wallet}
-              onChange={(e) => setWallet(e.target.value)}
-              placeholder="0x…"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 font-mono text-xs text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
-            />
-          </label>
-
-          <div className="sm:col-span-2">
-            {amt > 0 && rate && (
-              <p className="mb-3 text-xs text-[rgba(216,204,176,0.6)]">
-                {amt} ARENA ≈ <span className="font-semibold text-[#E8C040]">${previewUsd}</span> of play credit
-              </p>
-            )}
-            {notice && <p className="mb-3 text-xs text-[#5fb884]">{notice}</p>}
-            <button type="submit" disabled={submitting} className="btn-gold w-full sm:w-auto">
-              {submitting ? "Submitting…" : "Request top-up"}
-            </button>
-          </div>
-        </form>
-
-        {deposits.length > 0 && (
-          <div className="mt-5 border-t border-[rgba(201,162,39,0.15)] pt-4">
-            <p className="mb-2 text-xs uppercase tracking-wide text-[rgba(216,204,176,0.4)]">Your requests</p>
-            <ul className="flex flex-col gap-1.5">
-              {deposits.slice(0, 6).map((d) => (
-                <li key={d.id} className="flex items-center justify-between rounded-lg bg-[rgba(0,0,0,0.25)] px-3 py-2 text-sm">
-                  <span className="text-[#d8ccb0] tabular-nums">
-                    {Number(d.amount)} ARENA
-                    <span className="ml-2 text-xs text-[rgba(216,204,176,0.4)]">{d.method}</span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    {d.mint_tx && (
-                      <a
-                        href={`https://sepolia.etherscan.io/tx/${d.mint_tx}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-[rgba(216,204,176,0.5)] underline hover:text-[#E8C040]"
-                      >
-                        tx
-                      </a>
-                    )}
-                    <StatusPill status={d.status} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <button onClick={() => setShowExchange(true)} className="btn-gold w-full sm:w-auto">
+          <IconCoins size={18} /> Convert USD → ARENA
+        </button>
       </div>
 
       {/* Withdraw / cash-out */}
@@ -337,7 +223,7 @@ export default function RewardsPage() {
           <IconArrowDownLeft size={20} /> Cash out
         </h2>
         <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Convert your ARENA back to cash. <span className="text-[#E8C040]">Demo only</span> — an admin reviews and marks it paid.
+          Convert your ARENA back to cash. <span className="text-[#E8C040]">Demo only</span> — your ARENA is burned and an admin marks it paid.
         </p>
 
         <form onSubmit={submitWithdraw} className="grid gap-3 sm:grid-cols-2">
@@ -363,15 +249,12 @@ export default function RewardsPage() {
             />
           </label>
           <div className="sm:col-span-2">
-            {/* live conversion preview — the "how much you'll get" the player wants to see */}
+            {/* live conversion preview — burn X ARENA → receive $Y */}
             <div className="mb-3 rounded-lg border border-[rgba(201,162,39,0.15)] bg-[rgba(0,0,0,0.2)] px-4 py-3 text-center">
-              <span className="text-sm text-[rgba(216,204,176,0.6)]">You&apos;ll receive </span>
-              <span className="text-lg font-bold text-[#E8C040] tabular-nums">
-                ${Number(wUsd).toLocaleString()}
-              </span>
-              {wAmt > 0 && (
-                <span className="text-xs text-[rgba(216,204,176,0.4)]"> for {wAmt} ARENA</span>
-              )}
+              <span className="text-sm text-[rgba(216,204,176,0.6)]">Burn </span>
+              <span className="font-bold text-[#E8C040] tabular-nums">{wAmt || 0} ARENA</span>
+              <span className="mx-2 text-[rgba(216,204,176,0.35)]">→ receive</span>
+              <span className="text-lg font-bold text-[#5fb884] tabular-nums">${Number(wUsd).toLocaleString()}</span>
             </div>
             {wNotice && <p className="mb-3 text-xs text-[#5fb884]">{wNotice}</p>}
             <button
@@ -474,20 +357,18 @@ export default function RewardsPage() {
           })}
         </ul>
       </div>
-    </main>
-  );
-}
 
-function StatusPill({ status }: { status: "pending" | "approved" | "rejected" }) {
-  const map = {
-    pending: { t: "Pending", c: "#e0b34d", b: "rgba(224,179,77,0.15)" },
-    approved: { t: "Released", c: "#5fb884", b: "rgba(95,184,132,0.15)" },
-    rejected: { t: "Rejected", c: "#e06666", b: "rgba(224,102,102,0.15)" },
-  }[status];
-  return (
-    <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide" style={{ color: map.c, background: map.b }}>
-      {map.t}
-    </span>
+      {showExchange && (
+        <ExchangeModal
+          onClose={() => setShowExchange(false)}
+          reason="Convert your demo USD into ARENA — your USDC is deducted and ARENA is added to your wallet."
+          onBought={() => {
+            setShowExchange(false);
+            load();
+          }}
+        />
+      )}
+    </main>
   );
 }
 
