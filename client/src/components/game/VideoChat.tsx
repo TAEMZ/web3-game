@@ -10,10 +10,25 @@ import {
 import { useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 
-// Free public STUN servers. A TURN server would be needed for peers behind
-// strict/symmetric NATs — add one here later if calls fail to connect.
+// STUN finds each peer's public address; TURN relays the media when a direct P2P
+// path can't be formed (symmetric NAT, mobile data, different networks) — the case
+// where remote video tiles stay black. TURN below is a free ExpressTURN relay (UDP
+// + a TCP fallback for restrictive firewalls); override per-deploy via env
+// NEXT_PUBLIC_TURN_URL/_USER/_CRED (comma-separate multiple urls). Note: TURN creds
+// are always exposed to the browser — rotate them at expressturn.com if abused.
+const TURN_URLS = (process.env.NEXT_PUBLIC_TURN_URL ||
+  "turn:free.expressturn.com:3478,turn:free.expressturn.com:3478?transport=tcp")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
+const TURN_USER = process.env.NEXT_PUBLIC_TURN_USER || "000000002099069187";
+const TURN_CRED = process.env.NEXT_PUBLIC_TURN_CRED || "W7xGzxlWW4T39Fs3b2m0TstRElk=";
+
 const RTC_CONFIG: RTCConfiguration = {
-  iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }]
+  iceServers: [
+    { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
+    { urls: TURN_URLS, username: TURN_USER, credential: TURN_CRED }
+  ]
 };
 
 type Role = "w" | "b" | "s";
