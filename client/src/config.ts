@@ -10,3 +10,7 @@ export const API_URL =
     typeof window === "undefined"
         ? process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
         : process.env.NEXT_PUBLIC_API_URL || "";
+
+// Platform fee taken from the winner's pot (e.g. 15 = 15%).
+// Must match the value in the ArenaEscrow contract and server .env.
+export const HOUSE_FEE_PERCENT = Number(process.env.NEXT_PUBLIC_HOUSE_FEE_PERCENT || "15");
