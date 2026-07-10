@@ -164,13 +164,23 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The local <video> only mounts once `joined` is true, so attaching the camera
+  // stream inside join() (before the element exists) silently no-ops and the tile
+  // stays black. Attach it once the tile is on screen and start playback.
+  useEffect(() => {
+    const el = localVideoRef.current;
+    if (joined && el && localStreamRef.current) {
+      el.srcObject = localStreamRef.current;
+      el.play().catch(() => {});
+    }
+  }, [joined]);
+
   async function join() {
     if (isPlayer) {
       setStatus("Requesting camera…");
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localStreamRef.current = stream;
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       } catch {
         setStatus(
           window.isSecureContext
@@ -312,7 +322,10 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
 function RemoteVideo({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (ref.current) ref.current.srcObject = stream;
+    const el = ref.current;
+    if (!el) return;
+    el.srcObject = stream;
+    el.play().catch(() => {});
   }, [stream]);
   return (
     <video ref={ref} autoPlay playsInline className="aspect-video w-full rounded-lg bg-black object-cover" />
