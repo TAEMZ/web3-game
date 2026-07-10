@@ -22,6 +22,15 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
     const amount = Number(req.body.amount);
     if (!(amount > 0)) return res.status(400).json({ error: "amount must be greater than 0" });
 
+    // Rate limit: only 1 active (pending) withdrawal per player.
+    const { rows } = await db.query(
+        `SELECT id FROM "withdrawal" WHERE user_id=$1 AND status='pending' LIMIT 1`,
+        [user.id]
+    );
+    if (rows.length) {
+        return res.status(409).json({ error: "You already have a pending withdrawal" });
+    }
+
     const wallet = await walletOfUser(user.id);
 
     // Can't cash out more than you actually hold on-chain.
