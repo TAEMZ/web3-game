@@ -4,6 +4,7 @@ import {
   IconAlertTriangle,
   IconCoins,
   IconDeviceGamepad2,
+  IconDice,
   IconTrophy,
   IconUsers,
   IconWallet,
@@ -473,6 +474,7 @@ export default function AdminPage() {
                   </p>
                   <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
                     send to: <span className="text-[#d8ccb0]">{w.payout_to || "—"}</span>
+                    {w.birr ? <span className="ml-2">≈ <span className="text-[#d8ccb0]">{Number(w.birr).toLocaleString()} ETB</span></span> : null}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -579,6 +581,81 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Wagers */}
+      <div className="glass-dark mb-6 overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+        <div className="tricolor-bar" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+            <IconDice size={18} /> Wagers
+          </h2>
+          <span className="text-xs text-[rgba(216,204,176,0.4)]">{wagers?.length ?? 0} total</span>
+        </div>
+        <div className="px-3 pb-3">
+          {wagers && wagers.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-[rgba(216,204,176,0.4)]">No wagers yet.</p>
+          )}
+          {wagers?.map((wg) => {
+            const pot = wg.stake * 2;
+            const netPayout = Math.floor(pot * 0.85);
+            return (
+              <div
+                key={wg.id}
+                className="mb-2 rounded-xl border border-[rgba(201,162,39,0.12)] bg-[rgba(0,0,0,0.25)] p-3.5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-[rgba(201,162,39,0.15)] px-2 py-0.5 text-[0.65rem] font-bold uppercase text-[#E8C040]">
+                        {wg.state}
+                      </span>
+                      <span className="text-sm font-semibold text-[#d8ccb0]">{wg.stake} ARENA each</span>
+                      <span className="text-xs text-[rgba(216,204,176,0.4)]">→ pot {pot}</span>
+                      {wg.state === "funded" && (
+                        <span className="text-xs text-[rgba(216,204,176,0.35)]">winner gets {netPayout}</span>
+                      )}
+                      {wg.state === "settled" && wg.winner_wallet && (
+                        <span className="text-xs text-[#5fb884]">→ {wg.winner_wallet.slice(0, 6)}…{wg.winner_wallet.slice(-4)}</span>
+                      )}
+                    </div>
+                    <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-[rgba(216,204,176,0.5)]">
+                      <a href={`/${wg.game_code}`} target="_blank" rel="noopener noreferrer" className="text-[#E8C040] hover:underline">
+                        game {wg.game_code}
+                      </a>
+                      {wg.match_id != null && <span>match #{wg.match_id}</span>}
+                      {wg.fee_amount > 0 && <span>fee: {wg.fee_amount}</span>}
+                      {wg.settle_tx && (
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${wg.settle_tx}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline hover:text-[#E8C040]"
+                        >
+                          tx
+                        </a>
+                      )}
+                    </p>
+                  </div>
+                  {wg.state === "funded" && (
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        disabled={busy === `wg-${wg.id}`}
+                        onClick={() => {
+                          if (window.confirm(`Settle wager on ${wg.game_code} as draw? Both players refunded.`))
+                            settleWagerAction(wg.id, null, true);
+                        }}
+                        className="rounded-full border border-[rgba(201,162,39,0.3)] px-3 py-1.5 text-xs font-semibold text-[#d8ccb0] transition hover:bg-[rgba(201,162,39,0.12)]"
+                      >
+                        {busy === `wg-${wg.id}` ? "…" : "Draw"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Players */}
       <div className="glass-dark overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
         <div className="flex items-center justify-between px-5 py-4">
@@ -586,13 +663,15 @@ export default function AdminPage() {
           <span className="text-xs text-[rgba(216,204,176,0.4)]">{players ? `${players.length} shown` : "loading…"}</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
+          <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-y border-[rgba(201,162,39,0.12)] text-left text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
                 <th className="px-5 py-2 font-semibold">Player</th>
+                <th className="px-3 py-2 font-semibold">Email</th>
                 <th className="px-3 py-2 font-semibold">Wallet</th>
                 <th className="px-3 py-2 text-center font-semibold">W / L / D</th>
                 <th className="px-3 py-2 text-right font-semibold">ARENA</th>
+                <th className="px-3 py-2 font-semibold">Joined</th>
                 <th className="px-5 py-2 text-right font-semibold">Actions</th>
               </tr>
             </thead>
@@ -609,6 +688,9 @@ export default function AdminPage() {
                       </span>
                     )}
                   </td>
+                  <td className="px-3 py-3 text-xs text-[rgba(216,204,176,0.55)]">
+                    {p.email || "—"}
+                  </td>
                   <td className="px-3 py-3 font-mono text-xs text-[rgba(216,204,176,0.55)]">
                     {p.wallet ? `${p.wallet.slice(0, 6)}…${p.wallet.slice(-4)}` : "—"}
                   </td>
@@ -620,6 +702,9 @@ export default function AdminPage() {
                     <span className="text-[#E8C040]">{p.draws}</span>
                   </td>
                   <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#E8C040]">{p.tokens}</td>
+                  <td className="px-3 py-3 text-xs text-[rgba(216,204,176,0.45)]">
+                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -632,7 +717,7 @@ export default function AdminPage() {
                       </button>
                       {p.banned ? (
                         <button
-                          onClick={() => unban(p.id, p.name)}
+                          onClick={() => confirmUnban(p.id, p.name)}
                           disabled={busy === `ban-${p.id}`}
                           className="rounded-full border border-[rgba(95,184,132,0.4)] px-3 py-1.5 text-xs font-semibold text-[#5fb884] transition hover:bg-[rgba(95,184,132,0.12)] disabled:opacity-30"
                         >
@@ -640,7 +725,7 @@ export default function AdminPage() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => ban(p.id, p.name, false)}
+                          onClick={() => confirmBan(p.id, p.name, false)}
                           disabled={busy === `ban-${p.id}`}
                           className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)] disabled:opacity-30"
                         >
@@ -653,7 +738,7 @@ export default function AdminPage() {
               ))}
               {players && players.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-[rgba(216,204,176,0.4)]">
+                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-[rgba(216,204,176,0.4)]">
                     No players yet.
                   </td>
                 </tr>
