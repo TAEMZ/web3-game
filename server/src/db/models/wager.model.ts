@@ -120,6 +120,15 @@ export const markCancelled = async (id: number): Promise<void> => {
     await db.query(`UPDATE "wager" SET state='cancelled' WHERE id=$1`, [id]);
 };
 
+export const listAll = async (status?: string): Promise<Wager[]> => {
+    const query = status
+        ? `SELECT * FROM "wager" WHERE state=$1 ORDER BY created_at DESC LIMIT 200`
+        : `SELECT * FROM "wager" ORDER BY created_at DESC LIMIT 200`;
+    const params = status ? [status] : [];
+    const res = await db.query(query, params);
+    return res.rows as Wager[];
+};
+
 // Auto-settle a wager when its game ends: the server (SETTLER_ROLE) reports the
 // result to the escrow, which releases the pot to the winner (minus the platform
 // fee) or refunds a draw (no fee).
@@ -161,6 +170,7 @@ const WagerModel = {
     findByMatchId,
     markSettled,
     markCancelled,
-    settleForGame
+    settleForGame,
+    listAll
 };
 export default WagerModel;
