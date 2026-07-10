@@ -7,6 +7,7 @@ import {
   IconLock,
   IconCheck,
   IconCoins,
+  IconClockHour4,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -17,7 +18,7 @@ import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { createGame } from "@/lib/game";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { fromArenaWei, toArenaWei, tokenContract } from "@/lib/contracts";
+import { fromUsdcUnits, toUsdcUnits, usdContract } from "@/lib/contracts";
 import ExchangeModal from "@/components/exchange/ExchangeModal";
 
 const BAL = "function balanceOf(address) view returns (uint256)";
@@ -28,24 +29,24 @@ export default function PlayPlans() {
   const account = useActiveAccount();
   const user = session?.user;
 
-  const [price, setPrice] = useState(500);
-  const [arenaToUsd, setArenaToUsd] = useState(0.01);
+  const [priceUsd, setPriceUsd] = useState(5);
+  const [treasury, setTreasury] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
+  const [pending, setPending] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
-  const [shortfall, setShortfall] = useState(0);
 
   useEffect(() => {
     fetch(`${API_URL}/v1/config`)
       .then((r) => (r.ok ? r.json() : null))
       .then((c) => {
         if (!c) return;
-        if (c.subscriptionArena) setPrice(Number(c.subscriptionArena));
-        if (c.arenaToUsd) setArenaToUsd(Number(c.arenaToUsd));
+        if (c.subscriptionUsd) setPriceUsd(Number(c.subscriptionUsd));
+        if (c.treasuryAddress) setTreasury(c.treasuryAddress);
       })
       .catch(() => {});
   }, []);
@@ -57,7 +58,8 @@ export default function PlayPlans() {
       if (r.ok) {
         const d = await r.json();
         setSubscribed(!!d.subscribed);
-        if (d.price) setPrice(Number(d.price));
+        setPending(!!d.pending);
+        if (d.priceUsd) setPriceUsd(Number(d.priceUsd));
       }
     } catch {
       /* ignore */
@@ -83,57 +85,54 @@ export default function PlayPlans() {
     }
   }
 
-  const unlock = useCallback(async () => {
+  async function buyPass() {
     setError(null);
     if (!user?.id || typeof user.id !== "number") {
       router.push("/login");
       return;
     }
     if (!account) {
-      setError("Connect your wallet (top-right) to unlock the Arena Pass.");
+      setError("Connect your wallet (top-right) to buy the pass.");
+      return;
+    }
+    if (!treasury) {
+      setError("Payments aren't configured yet — try again shortly.");
       return;
     }
     setBusy(true);
     try {
-      setStep("Checking your ARENA…");
-      const raw = (await readContract({ contract: tokenContract, method: BAL, params: [account.address] })) as bigint;
-      const bal = fromArenaWei(raw);
-      if (bal < price) {
-        setShortfall(price - bal);
-        setShowExchange(true);
+      setStep("Checking your USD…");
+      const raw = (await readContract({ contract: usdContract, method: BAL, params: [account.address] })) as bigint;
+      const usd = fromUsdcUnits(raw);
+      if (usd < priceUsd) {
+        setError(`Not enough USD — you have $${usd.toFixed(2)}, need $${priceUsd}.`);
         return;
       }
-      setStep("Paying Arena Pass…");
-      const burnTx = prepareContractCall({
-        contract: tokenContract,
-        method: "function burn(uint256 amount)",
-        params: [toArenaWei(price)],
+      setStep(`Paying $${priceUsd} in USDC…`);
+      const tx = prepareContractCall({
+        contract: usdContract,
+        method: "function transfer(address to, uint256 amount) returns (bool)",
+        params: [treasury, toUsdcUnits(priceUsd)],
       });
-      const sent = await sendTransaction({ transaction: burnTx, account });
+      const sent = await sendTransaction({ transaction: tx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
 
-      setStep("Activating…");
+      setStep("Submitting for verification…");
       const res = await fetch(`${API_URL}/v1/subscription`, {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tx: sent.transactionHash }),
+        body: JSON.stringify({ tx: sent.transactionHash, wallet: account.address }),
       });
-      if (res.ok) {
-        setSubscribed(true);
-        if (session?.setUser && user) session.setUser({ ...user, subscribed: true });
-      } else {
-        setError((await res.json().catch(() => ({}))).error || "Could not activate the pass.");
-      }
+      if (res.ok) setPending(true);
+      else setError((await res.json().catch(() => ({}))).error || "Could not submit your request.");
     } catch (e) {
       setError((e as Error)?.message?.slice(0, 140) || "Transaction failed.");
     } finally {
       setBusy(false);
       setStep("");
     }
-  }, [account, price, router, session, user]);
-
-  const usd = (n: number) => `$${(n * arenaToUsd).toFixed(2)}`;
+  }
 
   return (
     <div className="animate-fade-in-up mx-auto w-full max-w-4xl px-4 py-10">
@@ -146,10 +145,7 @@ export default function PlayPlans() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* ── Casual ── */}
-        <div
-          className="glass-dark flex flex-col rounded-3xl p-6"
-          style={{ border: "1px solid rgba(201,162,39,0.18)" }}
-        >
+        <div className="glass-dark flex flex-col rounded-3xl p-6" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[rgba(75,115,153,0.18)] text-[#7fa8d0]">
               <IconChess size={26} />
@@ -184,7 +180,7 @@ export default function PlayPlans() {
             <div>
               <h2 className="font-display text-xl font-black text-[#E8C040]">Wager Arena</h2>
               <span className="text-xs font-semibold uppercase tracking-wider text-[#E8C040]">
-                Arena Pass · {price.toLocaleString()} ARENA <span className="text-[rgba(216,204,176,0.45)]">({usd(price)})</span>
+                Arena Pass · ${priceUsd}
               </span>
             </div>
           </div>
@@ -214,9 +210,19 @@ export default function PlayPlans() {
             </>
           )}
 
-          {!busy && !subscribed && (
-            <button onClick={unlock} className="btn-gold mt-6 w-full">
-              <IconLock size={16} /> Unlock — {price.toLocaleString()} ARENA
+          {!busy && !subscribed && pending && (
+            <div className="mt-6 rounded-xl bg-[rgba(201,162,39,0.1)] px-4 py-4 text-center">
+              <IconClockHour4 size={22} className="mx-auto text-[#E8C040]" />
+              <p className="mt-1.5 text-sm font-semibold text-[#E8C040]">Payment received — pending verification</p>
+              <p className="mt-1 text-xs text-[rgba(216,204,176,0.55)]">
+                An admin will verify your ${priceUsd} payment and unlock wager mode shortly.
+              </p>
+            </div>
+          )}
+
+          {!busy && !subscribed && !pending && (
+            <button onClick={buyPass} className="btn-gold mt-6 w-full">
+              <IconLock size={16} /> Buy Arena Pass — ${priceUsd} with USD
             </button>
           )}
 
@@ -224,19 +230,23 @@ export default function PlayPlans() {
         </div>
       </div>
 
-      <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-[rgba(216,204,176,0.4)]">
-        <IconCoins size={14} /> Short on ARENA? You can buy it with demo USDC — testnet play-money, all free.
-      </p>
+      <div className="mt-6 flex flex-col items-center gap-2">
+        <button
+          onClick={() => setShowExchange(true)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[rgba(216,204,176,0.6)] transition hover:text-[#E8C040]"
+        >
+          <IconCoins size={14} /> Need ARENA to stake? Buy some with USD →
+        </button>
+        <p className="text-center text-[0.7rem] text-[rgba(216,204,176,0.35)]">
+          All balances are testnet play-money — no real funds involved.
+        </p>
+      </div>
 
       {showExchange && (
         <ExchangeModal
           onClose={() => setShowExchange(false)}
-          neededArena={shortfall}
-          reason={`You need ${Math.ceil(shortfall).toLocaleString()} more ARENA to unlock the Arena Pass (${price.toLocaleString()} ARENA total).`}
-          onBought={() => {
-            setShowExchange(false);
-            unlock();
-          }}
+          reason="Buy ARENA with your demo USD to stake in wager matches."
+          onBought={() => setShowExchange(false)}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import { config as web3Config, isTokenConfigured, isEscrowConfigured } from "../web3/arena.js";
+import { config as web3Config, isTokenConfigured, isEscrowConfigured, minterAddress } from "../web3/arena.js";
 import { usdConfig, isUsdConfigured } from "../web3/usd.js";
-import { SUBSCRIPTION_ARENA } from "./subscription.controller.js";
+import { SUBSCRIPTION_USD } from "./subscription.controller.js";
 
 const EXCHANGE_ADDRESS = (process.env.ARENA_EXCHANGE_ADDRESS || "").trim() || null;
 const EXCHANGE_RATE = Number(process.env.EXCHANGE_RATE ?? 100); // ARENA per 1 USDC
@@ -24,7 +24,8 @@ export const getConfig = (_req: Request, res: Response) => {
         exchangeRate: EXCHANGE_RATE, // ARENA per 1 USDC
         // 1 ARENA in USD (derived from the exchange rate so display + swap agree)
         arenaToUsd: EXCHANGE_RATE > 0 ? 1 / EXCHANGE_RATE : 0.01,
-        // one-time Arena Pass price (ARENA) to unlock wager mode
-        subscriptionArena: SUBSCRIPTION_ARENA
+        // Arena Pass (wager unlock): price in USD, paid to the treasury for admin verification
+        subscriptionUsd: SUBSCRIPTION_USD,
+        treasuryAddress: minterAddress()
     });
 };

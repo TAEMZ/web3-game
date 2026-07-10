@@ -107,6 +107,23 @@ export const INIT_TABLES = /* sql */ `
     CREATE INDEX IF NOT EXISTS idx_deposit_status ON "deposit"(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_deposit_user ON "deposit"(user_id);
 
+    -- Arena Pass (subscription) purchases: player pays in USD, admin verifies and
+    -- grants the pass (sets user.subscribed). One-time, no expiry.
+    CREATE TABLE IF NOT EXISTS "subscription_request" (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES "user",
+        user_name VARCHAR(64),
+        usd NUMERIC NOT NULL,                -- USD the player paid for the pass
+        wallet VARCHAR(64),
+        tx VARCHAR(80),                      -- on-chain USDC payment tx (if any)
+        status VARCHAR(16) DEFAULT 'pending',-- pending | approved | rejected
+        reviewed_by VARCHAR(64),
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_subreq_status ON "subscription_request"(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_subreq_user ON "subscription_request"(user_id);
+
     -- Withdrawals (cash-out): player converts ARENA back to birr. Admin pays the
     -- birr off-chain and marks it paid. Amount/birr snapshot recorded at request.
     CREATE TABLE IF NOT EXISTS "withdrawal" (

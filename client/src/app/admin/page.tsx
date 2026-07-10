@@ -4,6 +4,7 @@ import {
   IconAlertTriangle,
   IconCoins,
   IconDeviceGamepad2,
+  IconTrophy,
   IconUsers,
   IconWallet,
 } from "@tabler/icons-react";
@@ -63,6 +64,15 @@ interface Withdrawal {
   status: string;
   created_at: string;
 }
+interface SubReq {
+  id: number;
+  user_name: string;
+  usd: string;
+  wallet: string | null;
+  tx: string | null;
+  status: string;
+  created_at: string;
+}
 
 const REASON_LABEL: Record<string, string> = {
   cheating: "Cheating",
@@ -82,6 +92,7 @@ export default function AdminPage() {
   const [reports, setReports] = useState<Report[] | null>(null);
   const [deposits, setDeposits] = useState<Deposit[] | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[] | null>(null);
+  const [subs, setSubs] = useState<SubReq[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -91,18 +102,37 @@ export default function AdminPage() {
   }, [checking, user?.id, user?.is_admin, router]);
 
   async function load() {
-    const [o, p, r, d, w] = await Promise.all([
+    const [o, p, r, d, w, s] = await Promise.all([
       fetch(`${API_URL}/v1/admin/overview`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/players`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/reports`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/deposits/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/withdrawals/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+      fetch(`${API_URL}/v1/subscription/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
     ]);
     if (o) setOverview(o);
     if (p) setPlayers(p.players);
     if (r) setReports(r.reports);
     if (d) setDeposits(d.deposits);
     if (w) setWithdrawals(w.withdrawals);
+    if (s) setSubs(s.requests);
+  }
+
+  async function subAction(id: number, action: "approve" | "reject", ok: string) {
+    setBusy(`sub-${id}`);
+    try {
+      const res = await fetch(`${API_URL}/v1/subscription/${id}/${action}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      flash(res.ok ? ok : data.error || "Action failed");
+      await load();
+    } catch {
+      flash("Action failed");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function withdrawalAction(id: number, action: "pay" | "reject", ok: string) {
@@ -213,6 +243,65 @@ export default function AdminPage() {
             <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Arena Pass requests */}
+      <div className="glass-dark mb-6 overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+        <div className="tricolor-bar" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+            <IconTrophy size={18} /> Arena Pass requests
+          </h2>
+          <span className="text-xs text-[rgba(216,204,176,0.4)]">{subs?.length ?? 0} pending</span>
+        </div>
+        <div className="px-3 pb-3">
+          {subs && subs.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-[rgba(216,204,176,0.4)]">No pending pass requests.</p>
+          )}
+          {subs?.map((s) => (
+            <div key={s.id} className="mb-2 rounded-xl border border-[rgba(201,162,39,0.12)] bg-[rgba(0,0,0,0.25)] p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-[#d8ccb0]">
+                    <span className="font-semibold">{s.user_name}</span>
+                    <span className="mx-2 text-[rgba(216,204,176,0.35)]">paid</span>
+                    <span className="font-bold text-[#5fb884] tabular-nums">${Number(s.usd)}</span>
+                    <span className="ml-2 text-xs text-[rgba(216,204,176,0.4)]">for the Arena Pass</span>
+                  </p>
+                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-[rgba(216,204,176,0.5)]">
+                    {s.wallet && <span className="font-mono">{s.wallet.slice(0, 6)}…{s.wallet.slice(-4)}</span>}
+                    {s.tx && (
+                      <a
+                        href={`https://sepolia.etherscan.io/tx/${s.tx}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:text-[#E8C040]"
+                      >
+                        view payment
+                      </a>
+                    )}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    disabled={busy === `sub-${s.id}`}
+                    onClick={() => subAction(s.id, "approve", `Granted the Arena Pass to ${s.user_name}`)}
+                    className="btn-gold px-3 py-1.5 text-xs"
+                  >
+                    {busy === `sub-${s.id}` ? "…" : "Verify & unlock"}
+                  </button>
+                  <button
+                    disabled={busy === `sub-${s.id}`}
+                    onClick={() => subAction(s.id, "reject", `Rejected ${s.user_name}'s pass request`)}
+                    className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Top-up requests */}
