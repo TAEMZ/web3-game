@@ -37,8 +37,8 @@ function reasonText(reason: Game["endReason"]): string {
   }
 }
 
-const WIN_REWARD = 50;
-const DRAW_REWARD = 10;
+const WIN_REWARD = 5;
+const DRAW_REWARD = 2;
 
 // Gold crown haloed by a gold glow + slow green swirl.
 function VictoryHero() {
@@ -196,6 +196,7 @@ export default function GameOverModal({
     if (wagerResult === "won" && wagerStake) {
       const netProfit = Math.floor(wagerStake * 2 * (1 - HOUSE_FEE_PERCENT / 100)) - wagerStake;
       lines.push({ label: "Wager winnings", value: netProfit });
+      if (wagerFee > 0) lines.push({ label: `System cut (${HOUSE_FEE_PERCENT}%)`, value: -wagerFee });
     }
     lines.push({ label: "Win reward", value: WIN_REWARD });
   } else if (outcome === "draw") {
@@ -203,7 +204,7 @@ export default function GameOverModal({
     lines.push({ label: "Draw reward", value: DRAW_REWARD });
   } else if (outcome === "loss") {
     if (wagerResult === "lost" && wagerStake) lines.push({ label: "Wager lost", value: -wagerStake });
-    if (didResign) lines.push({ label: "Resignation penalty", value: -resignPenalty });
+    lines.push({ label: "Loss penalty", value: -resignPenalty });
   }
 
   return (

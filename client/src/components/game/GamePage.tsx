@@ -38,8 +38,8 @@ import BoardThemePicker from "./BoardThemePicker";
 import { ethiopianPieces } from "./pieces";
 import { defaultBoardTheme, getBoardTheme, type BoardTheme } from "@/lib/boardThemes";
 
-// ARENA docked for resigning; mirrors RESIGN_PENALTY in the server rewards controller.
-const RESIGN_PENALTY = 25;
+// ARENA docked for a loss (resignation included); mirrors LOSS_PENALTY in the server rewards controller.
+const RESIGN_PENALTY = 3;
 
 // Emote reactions — must match the server whitelist in game.socket.ts (EMOTES).
 const EMOTES = ["👍", "😂", "😮", "😢", "😡", "🎉", "🔥", "👏", "🤝", "😎", "♟️", "💀"];

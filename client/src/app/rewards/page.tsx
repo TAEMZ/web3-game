@@ -268,8 +268,8 @@ export default function RewardsPage() {
           )}
           {(rewards?.penalty || 0) > 0 && (
             <p className="mt-2 text-xs text-red-400">
-              −{rewards?.penalty} ARENA from {rewards?.stats.resignations} resignation
-              {(rewards?.stats.resignations || 0) > 1 ? "s" : ""}
+              −{rewards?.penalty} ARENA from {rewards?.stats.losses} loss
+              {(rewards?.stats.losses || 0) > 1 ? "es" : ""}
             </p>
           )}
         </div>

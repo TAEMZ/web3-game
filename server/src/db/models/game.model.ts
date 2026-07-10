@@ -7,8 +7,8 @@ import WagerModel from "./wager.model.js";
 export const activeGames: Game[] = [];
 
 // Reward amounts (whole ARENA tokens), minted on-chain to the player's wallet.
-const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
-const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
+const REWARD_WIN = Number(process.env.REWARD_WIN ?? 5);
+const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 2);
 
 // Look up a player's linked wallet address (null for guests/bots/unlinked).
 const walletOf = async (userId?: number | string): Promise<string | null> => {

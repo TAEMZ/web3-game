@@ -5,9 +5,10 @@ import { db } from "../db/index.js";
 import { mintReward, tokenBalanceOf, isTokenConfigured, config as web3Config } from "../web3/arena.js";
 import { getPlayerBadges, mintBadgesFor, nftConfig } from "../web3/nft.js";
 
-const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
-const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
-const RESIGN_PENALTY = Number(process.env.RESIGN_PENALTY ?? 25);
+const REWARD_WIN = Number(process.env.REWARD_WIN ?? 5);
+const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 2);
+// Every loss (checkmate, timeout, or resignation) reduces the displayed estimate.
+const LOSS_PENALTY = Number(process.env.LOSS_PENALTY ?? 3);
 
 // Conversion rate — derived from the exchange rate so the "$ worth" shown here
 // matches what USDC actually buys/sells (1 USDC = EXCHANGE_RATE ARENA).
@@ -98,7 +99,8 @@ export const getUserRewards = async (req: Request, res: Response) => {
         // DB-derived estimate (used as fallback + as the "earned" figure).
         const resignations = user.resignations || 0;
         const earned = (user.wins || 0) * REWARD_WIN + (user.draws || 0) * REWARD_DRAW;
-        const penalty = resignations * RESIGN_PENALTY;
+        // Any loss deducts LOSS_PENALTY (resignations are a subset of losses).
+        const penalty = (user.losses || 0) * LOSS_PENALTY;
         const simulatedTokens = Math.max(0, earned - penalty);
 
         // Real on-chain balance when possible.
@@ -127,7 +129,7 @@ export const getUserRewards = async (req: Request, res: Response) => {
             token: web3Config.token,
             simulatedTokens,
             penalty,
-            resignPenalty: RESIGN_PENALTY,
+            resignPenalty: LOSS_PENALTY,
             conversion: conversionFor(totalTokens),
             achievements,
             badges,
