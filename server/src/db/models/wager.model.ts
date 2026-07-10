@@ -2,6 +2,8 @@ import type { Game } from "@arena/types";
 import { db } from "../index.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../../web3/arena.js";
 
+const HOUSE_FEE_PERCENT = Number(process.env.HOUSE_FEE_PERCENT || "15");
+
 export interface Wager {
     id: number;
     game_code: string;
@@ -13,6 +15,7 @@ export interface Wager {
     p2_wallet: string | null;
     state: "staking" | "open" | "funded" | "settled" | "cancelled";
     winner_wallet: string | null;
+    fee_amount: number;
     settle_tx: string | null;
 }
 
@@ -102,11 +105,13 @@ export const findByMatchId = async (matchId: number): Promise<Wager | null> => {
 export const markSettled = async (
     id: number,
     winnerWallet: string | null,
-    tx: string | null
+    tx: string | null,
+    feeAmount: number = 0
 ): Promise<void> => {
-    await db.query(`UPDATE "wager" SET state='settled', winner_wallet=$1, settle_tx=$2 WHERE id=$3`, [
+    await db.query(`UPDATE "wager" SET state='settled', winner_wallet=$1, settle_tx=$2, fee_amount=$3 WHERE id=$4`, [
         winnerWallet ? winnerWallet.toLowerCase() : null,
         tx,
+        feeAmount,
         id
     ]);
 };
@@ -116,7 +121,8 @@ export const markCancelled = async (id: number): Promise<void> => {
 };
 
 // Auto-settle a wager when its game ends: the server (SETTLER_ROLE) reports the
-// result to the escrow, which releases the pot to the winner (or refunds a draw).
+// result to the escrow, which releases the pot to the winner (minus the platform
+// fee) or refunds a draw (no fee).
 // No-op unless the escrow is deployed and the wager is fully funded (both staked).
 export const settleForGame = async (game: Game): Promise<void> => {
     try {
@@ -126,7 +132,7 @@ export const settleForGame = async (game: Game): Promise<void> => {
 
         if (game.winner === "draw") {
             const tx = await settleWagerDraw(w.match_id);
-            await markSettled(w.id, null, tx);
+            await markSettled(w.id, null, tx, 0);
         } else if (game.winner === "white" || game.winner === "black") {
             const winnerUserId = game.winner === "white" ? game.white?.id : game.black?.id;
             let wallet: string | null = null;
@@ -136,8 +142,9 @@ export const settleForGame = async (game: Game): Promise<void> => {
                 console.warn(`[web3] wager #${w.id}: could not map winner to a staked wallet`);
                 return;
             }
+            const feeAmount = Math.floor(w.stake * 2 * HOUSE_FEE_PERCENT / 100);
             const tx = await settleWager(w.match_id, wallet);
-            await markSettled(w.id, wallet, tx);
+            await markSettled(w.id, wallet, tx, feeAmount);
         }
     } catch (err) {
         console.error("[web3] settleForGame error:", (err as Error).message);
