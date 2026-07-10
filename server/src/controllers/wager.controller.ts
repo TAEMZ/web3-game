@@ -5,6 +5,7 @@ import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { withKeyLock } from "../util/locks.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../web3/arena.js";
+import * as SettlementQueue from "../db/models/settlement-queue.js";
 
 const HOUSE_FEE_PERCENT = Number(process.env.HOUSE_FEE_PERCENT || "15");
 
@@ -157,14 +158,22 @@ export const adminSettleWager = async (req: Request, res: Response) => {
 
     if (draw) {
         const tx = await settleWagerDraw(wager.match_id);
-        await WagerModel.markSettled(wager.id, null, tx, 0);
-        return res.json({ settled: true, draw: true, tx });
+        if (tx) {
+            await WagerModel.markSettled(wager.id, null, tx, 0);
+            return res.json({ settled: true, draw: true, tx });
+        }
+        await SettlementQueue.enqueue(wager.id, wager.match_id, "draw", null);
+        return res.status(502).json({ settled: false, queued: true, error: "On-chain call failed; queued for retry" });
     }
     if (!isAddr(winnerWallet) || ![wager.p1_wallet, wager.p2_wallet].includes(winnerWallet.toLowerCase())) {
         return res.status(400).json({ error: "winnerWallet must be one of the two staked wallets" });
     }
     const feeAmount = Math.floor(wager.stake * 2 * HOUSE_FEE_PERCENT / 100);
     const tx = await settleWager(wager.match_id, winnerWallet);
-    await WagerModel.markSettled(wager.id, winnerWallet, tx, feeAmount);
-    return res.json({ settled: true, winner: winnerWallet, fee: feeAmount, tx });
+    if (tx) {
+        await WagerModel.markSettled(wager.id, winnerWallet, tx, feeAmount);
+        return res.json({ settled: true, winner: winnerWallet, fee: feeAmount, tx });
+    }
+    await SettlementQueue.enqueue(wager.id, wager.match_id, "win", winnerWallet);
+    return res.status(502).json({ settled: false, queued: true, error: "On-chain call failed; queued for retry" });
 };
