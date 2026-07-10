@@ -34,9 +34,10 @@ contract ArenaNFT is ERC721, AccessControl {
         require(achievement < ACHIEVEMENT_COUNT, "bad achievement");
         require(!hasAchievement[to][achievement], "already earned");
         uint256 id = ++_nextId;
-        _safeMint(to, id);
-        tokenAchievement[id] = achievement;
+        // Set state BEFORE _safeMint to prevent reentrancy via onERC721Received.
         hasAchievement[to][achievement] = true;
+        tokenAchievement[id] = achievement;
+        _safeMint(to, id);
         emit AchievementMinted(to, id, achievement);
         return id;
     }
