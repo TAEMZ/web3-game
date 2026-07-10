@@ -51,7 +51,11 @@ const escrowAbi = [
         type: "function", name: "matches", stateMutability: "view", inputs: [{ name: "", type: "uint256" }],
         outputs: [{ name: "player1", type: "address" }, { name: "player2", type: "address" }, { name: "stake", type: "uint256" }, { name: "state", type: "uint8" }]
     },
-    { type: "function", name: "nextMatchId", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] }
+    { type: "function", name: "nextMatchId", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "treasury", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+    { type: "function", name: "feePercent", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "setTreasury", stateMutability: "nonpayable", inputs: [{ name: "newTreasury", type: "address" }], outputs: [] },
+    { type: "function", name: "setFeePercent", stateMutability: "nonpayable", inputs: [{ name: "newFee", type: "uint256" }], outputs: [] }
 ] as const;
 
 // --- clients (lazy) -----------------------------------------------------------
