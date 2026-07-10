@@ -235,6 +235,41 @@ export default function AdminPage() {
     post("unban", { userId: id }, `ban-${id}`, `Unbanned ${name}`);
   const resolve = (id: number) => post("resolve", { reportId: id }, `res-${id}`, "Report resolved");
 
+  async function settleWagerAction(wagerId: number, winnerWallet: string | null, draw: boolean) {
+    const key = `wg-${wagerId}`;
+    setBusy(key);
+    try {
+      const res = await fetch(`${API_URL}/v1/wager/settle`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameCode: wagers?.find((w) => w.id === wagerId)?.game_code, winnerWallet, draw }),
+      });
+      const data = await res.json().catch(() => ({}));
+      flash(res.ok ? "Wager settled" : data.error || "Settle failed");
+      await load();
+    } catch {
+      flash("Settle failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function confirmBan(id: number, name: string, withIp: boolean) {
+    const msg = withIp
+      ? `Ban ${name} and block their IP? This cannot be undone.`
+      : `Ban ${name}? This cannot be undone.`;
+    if (window.confirm(msg)) ban(id, name, withIp);
+  }
+
+  function confirmUnban(id: number, name: string) {
+    if (window.confirm(`Unban ${name}?`)) unban(id, name);
+  }
+
+  function confirmResolve(id: number) {
+    if (window.confirm("Dismiss this report?")) resolve(id);
+  }
+
   if (checking || !user?.is_admin) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
