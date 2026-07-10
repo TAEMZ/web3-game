@@ -1,6 +1,7 @@
 "use client";
 
 import { IconVideo } from "@tabler/icons-react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -8,11 +9,14 @@ import { API_URL } from "@/config";
 
 // In-game video via JaaS (8x8-hosted Jitsi). The App ID is public; the real auth is
 // the signed token the server hands us, so the player joins as their chess username
-// with no Jitsi/Google login. Relaying is handled by 8x8's infra, which works on
-// restrictive networks (falls back to TCP/443) where raw peer-to-peer WebRTC didn't.
+// with no Jitsi/Google login. It renders as a small draggable + resizable floating
+// window so the board and chat stay usable underneath.
 const JAAS_DOMAIN = "8x8.vc";
 const APP_ID =
   process.env.NEXT_PUBLIC_JAAS_APP_ID || "vpaas-magic-cookie-9cea7e6134b846cd9883d0ff27cb4dfe";
+const DEFAULT_SIZE = { w: 360, h: 300 };
+const MIN_W = 280;
+const MIN_H = 220;
 
 declare global {
   interface Window {
@@ -21,7 +25,6 @@ declare global {
   }
 }
 
-// Load 8x8's external_api.js once, and hand back the constructor.
 function loadJaasApi(): Promise<any> {
   return new Promise((resolve, reject) => {
     if (window.JitsiMeetExternalAPI) return resolve(window.JitsiMeetExternalAPI);
@@ -54,13 +57,17 @@ export default function JitsiVideo({
   isPlayer?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const winRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
+  const dragRef = useRef<{ dx: number; dy: number } | null>(null);
+  const resizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const [active, setActive] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null); // null → default bottom-right
+  const [size, setSize] = useState(DEFAULT_SIZE);
 
-  // Same room string on every participant's client → they all land together.
   const room = `chessarena-${String(gameCode)}`.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
   function stop() {
@@ -74,14 +81,12 @@ export default function JitsiVideo({
     setActive(false);
   }
 
-  // Clean up the call if the component unmounts (e.g. game left).
   useEffect(() => {
     return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Once the modal (and its container) is on screen and we have a token, mount the
-  // Jitsi iframe into it. Doing this in an effect guarantees the container exists.
+  // Mount the Jitsi iframe once the window (and its container) is on screen.
   useEffect(() => {
     if (!active || !token || apiRef.current) return;
     let cancelled = false;
@@ -102,10 +107,7 @@ export default function JitsiVideo({
             startWithVideoMuted: false,
             disableModeratorIndicator: true
           },
-          interfaceConfigOverwrite: {
-            MOBILE_APP_PROMO: false,
-            HIDE_INVITE_MORE_HEADER: true
-          }
+          interfaceConfigOverwrite: { MOBILE_APP_PROMO: false, HIDE_INVITE_MORE_HEADER: true }
         });
         apiRef.current.addEventListener("readyToClose", () => stop());
       } catch {
@@ -126,7 +128,6 @@ export default function JitsiVideo({
     setError(null);
     setBusy(true);
     try {
-      // moderator=1 for the two players, 0 for spectators.
       const res = await fetch(
         `${API_URL}/v1/jitsi/token?room=${encodeURIComponent(room)}&moderator=${isPlayer ? 1 : 0}`,
         { credentials: "include" }
@@ -145,6 +146,53 @@ export default function JitsiVideo({
     }
   }
 
+  // --- drag (title bar) — pointer capture keeps events flowing over the iframe ---
+  function onDragDown(e: ReactPointerEvent<HTMLDivElement>) {
+    const rect = winRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onDragMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) return;
+    const x = Math.max(0, Math.min(e.clientX - dragRef.current.dx, window.innerWidth - size.w));
+    const y = Math.max(0, Math.min(e.clientY - dragRef.current.dy, window.innerHeight - size.h));
+    setPos({ x, y });
+  }
+  function onDragUp(e: ReactPointerEvent<HTMLDivElement>) {
+    dragRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // --- resize (corner handle) ---
+  function onResizeDown(e: ReactPointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    resizeRef.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onResizeMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    const w = Math.max(MIN_W, Math.min(resizeRef.current.w + (e.clientX - resizeRef.current.x), window.innerWidth - 16));
+    const h = Math.max(MIN_H, Math.min(resizeRef.current.h + (e.clientY - resizeRef.current.y), window.innerHeight - 16));
+    setSize({ w, h });
+  }
+  function onResizeUp(e: ReactPointerEvent<HTMLDivElement>) {
+    resizeRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const winStyle: CSSProperties = pos
+    ? { left: pos.x, top: pos.y, width: size.w, height: size.h }
+    : { right: 12, bottom: 12, width: size.w, height: size.h };
+
   return (
     <>
       {!active && (
@@ -161,19 +209,39 @@ export default function JitsiVideo({
         </div>
       )}
 
-      {/* Active call: a floating corner window (portaled to <body>) so the board stays
-          visible — it doesn't cover the game. */}
+      {/* Draggable + resizable floating window (portaled to <body>) so the board and
+          chat stay visible and usable underneath. */}
       {active &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed bottom-3 right-3 z-50 w-[min(92vw,440px)] overflow-hidden rounded-2xl border border-[rgba(201,162,39,0.35)] bg-black shadow-2xl">
-            <div ref={containerRef} className="h-[min(50vh,320px)] w-full" />
-            <button
-              onClick={stop}
-              className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[rgba(184,24,24,0.92)] px-3 py-1 text-xs font-semibold text-white shadow-lg transition hover:bg-[rgba(184,24,24,1)]"
+          <div
+            ref={winRef}
+            className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[rgba(201,162,39,0.4)] bg-black shadow-2xl"
+            style={winStyle}
+          >
+            <div
+              className="flex h-8 shrink-0 cursor-move touch-none select-none items-center justify-between bg-[rgba(13,22,18,0.95)] px-2"
+              onPointerDown={onDragDown}
+              onPointerMove={onDragMove}
+              onPointerUp={onDragUp}
             >
-              Leave call
-            </button>
+              <span className="text-[11px] font-semibold text-[rgba(216,204,176,0.6)]">⠿ Video — drag</span>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={stop}
+                className="rounded-full bg-[rgba(184,24,24,0.9)] px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-[rgba(184,24,24,1)]"
+              >
+                Leave
+              </button>
+            </div>
+            <div ref={containerRef} className="min-h-0 w-full flex-1" />
+            <div
+              className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize touch-none"
+              style={{ background: "linear-gradient(135deg, transparent 45%, rgba(201,162,39,0.75) 45%)" }}
+              onPointerDown={onResizeDown}
+              onPointerMove={onResizeMove}
+              onPointerUp={onResizeUp}
+            />
           </div>,
           document.body
         )}
