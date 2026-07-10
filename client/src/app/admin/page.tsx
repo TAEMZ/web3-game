@@ -127,13 +127,14 @@ export default function AdminPage() {
   }, [checking, user?.id, user?.is_admin, router]);
 
   async function load() {
-    const [o, p, r, d, w, s] = await Promise.all([
+    const [o, p, r, d, w, s, wg] = await Promise.all([
       fetch(`${API_URL}/v1/admin/overview`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/players`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/admin/reports`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/deposits/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/withdrawals/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
       fetch(`${API_URL}/v1/subscription/admin?status=pending`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+      fetch(`${API_URL}/v1/admin/wagers`, { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
     ]);
     if (o) setOverview(o);
     if (p) setPlayers(p.players);
@@ -141,6 +142,7 @@ export default function AdminPage() {
     if (d) setDeposits(d.deposits);
     if (w) setWithdrawals(w.withdrawals);
     if (s) setSubs(s.requests);
+    if (wg) setWagers(wg.wagers);
   }
 
   async function subAction(id: number, action: "approve" | "reject", ok: string) {
