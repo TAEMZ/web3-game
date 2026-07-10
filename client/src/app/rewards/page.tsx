@@ -7,8 +7,7 @@ import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { tokenContract, toArenaWei, EXCHANGE_RATE, ARENA_NFT_ADDRESS } from "@/lib/contracts";
-import ExchangeModal from "@/components/exchange/ExchangeModal";
+import { tokenContract, toArenaWei, ARENA_NFT_ADDRESS } from "@/lib/contracts";
 import { useRouter } from "next/navigation";
 
 interface Achievement {
@@ -67,10 +66,7 @@ export default function RewardsPage() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // convert USD -> ARENA
-  const [showExchange, setShowExchange] = useState(false);
-
-  // admin-verified top-up request
+  // admin-verified top-up request — the only way to acquire ARENA (admin verifies & releases)
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [wallet, setWallet] = useState("");
@@ -253,29 +249,14 @@ export default function RewardsPage() {
         </div>
       </div>
 
-      {/* Buy / convert USD -> ARENA */}
+      {/* Admin-verified top-up request — the only way to buy ARENA */}
       <div className="glass-dark mb-6 rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
         <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[#E8C040]">
           <IconArrowUpRight size={20} /> Buy ARENA
         </h2>
         <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Convert your demo USD into ARENA to stake in wager matches. Your USDC is
-          <span className="text-[#E8C040]"> deducted</span> and ARENA lands in your wallet instantly —{" "}
-          <span className="text-[#E8C040]">{EXCHANGE_RATE} ARENA per $1</span>. All testnet play-money.
-        </p>
-        <button onClick={() => setShowExchange(true)} className="btn-gold w-full sm:w-auto">
-          <IconCoins size={18} /> Convert USD → ARENA
-        </button>
-      </div>
-
-      {/* Admin-verified top-up request */}
-      <div className="glass-dark mb-6 rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
-        <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[#E8C040]">
-          <IconArrowUpRight size={20} /> Request a top-up
-        </h2>
-        <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Prefer a manual top-up? Submit a request and{" "}
-          <span className="text-[#E8C040]">an admin reviews it and releases the ARENA</span> to your wallet.{" "}
+          Submit a top-up request and{" "}
+          <span className="text-[#E8C040]">an admin verifies your payment and releases the ARENA</span> to your wallet.{" "}
           <span className="text-[rgba(216,204,176,0.4)]">Demo only — no real payment.</span>
         </p>
 
@@ -492,16 +473,6 @@ export default function RewardsPage() {
         </ul>
       </div>
 
-      {showExchange && (
-        <ExchangeModal
-          onClose={() => setShowExchange(false)}
-          reason="Convert your demo USD into ARENA — your USDC is deducted and ARENA is added to your wallet."
-          onBought={() => {
-            setShowExchange(false);
-            load();
-          }}
-        />
-      )}
     </main>
   );
 }

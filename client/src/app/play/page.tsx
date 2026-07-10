@@ -19,7 +19,6 @@ import { API_URL } from "@/config";
 import { createGame } from "@/lib/game";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
 import { fromUsdcUnits, toUsdcUnits, usdContract } from "@/lib/contracts";
-import ExchangeModal from "@/components/exchange/ExchangeModal";
 
 const BAL = "function balanceOf(address) view returns (uint256)";
 
@@ -38,7 +37,6 @@ export default function PlayPlans() {
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [showExchange, setShowExchange] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/v1/config`)
@@ -241,23 +239,15 @@ export default function PlayPlans() {
 
       <div className="mt-6 flex flex-col items-center gap-2">
         <button
-          onClick={() => setShowExchange(true)}
+          onClick={() => router.push("/rewards")}
           className="flex items-center gap-1.5 text-xs font-semibold text-[rgba(216,204,176,0.6)] transition hover:text-[#E8C040]"
         >
-          <IconCoins size={14} /> Need ARENA to stake? Buy some with USD →
+          <IconCoins size={14} /> Need ARENA to stake? Request a top-up →
         </button>
         <p className="text-center text-[0.7rem] text-[rgba(216,204,176,0.35)]">
           All balances are testnet play-money — no real funds involved.
         </p>
       </div>
-
-      {showExchange && (
-        <ExchangeModal
-          onClose={() => setShowExchange(false)}
-          reason="Buy ARENA with your demo USD to stake in wager matches."
-          onBought={() => setShowExchange(false)}
-        />
-      )}
     </div>
   );
 }
