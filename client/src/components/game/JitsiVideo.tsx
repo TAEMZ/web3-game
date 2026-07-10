@@ -45,100 +45,139 @@ function loadJaasApi(): Promise<any> {
   });
 }
 
-export default function JitsiVideo({ gameCode }: { gameCode: string | number }) {
+export default function JitsiVideo({
+  gameCode,
+  isPlayer = true
+}: {
+  gameCode: string | number;
+  isPlayer?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
-  const [joined, setJoined] = useState(false);
+  const [active, setActive] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Same room string on every participant's client → they all land together.
   const room = `chessarena-${String(gameCode)}`.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-  function dispose() {
+  function stop() {
     try {
       apiRef.current?.dispose?.();
     } catch {
       /* ignore */
     }
     apiRef.current = null;
-    setJoined(false);
+    setToken(null);
+    setActive(false);
   }
 
+  // Clean up the call if the component unmounts (e.g. game left).
   useEffect(() => {
-    return () => dispose();
+    return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Once the modal (and its container) is on screen and we have a token, mount the
+  // Jitsi iframe into it. Doing this in an effect guarantees the container exists.
+  useEffect(() => {
+    if (!active || !token || apiRef.current) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const JitsiMeetExternalAPI = await loadJaasApi();
+        if (cancelled || !containerRef.current || apiRef.current) return;
+        apiRef.current = new JitsiMeetExternalAPI(JAAS_DOMAIN, {
+          roomName: `${APP_ID}/${room}`,
+          jwt: token,
+          parentNode: containerRef.current,
+          width: "100%",
+          height: "100%",
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            disableDeepLinking: true,
+            startWithAudioMuted: false,
+            startWithVideoMuted: false
+          },
+          interfaceConfigOverwrite: {
+            MOBILE_APP_PROMO: false,
+            HIDE_INVITE_MORE_HEADER: true
+          }
+        });
+        apiRef.current.addEventListener("readyToClose", () => stop());
+      } catch {
+        if (!cancelled) {
+          setError("Couldn't reach the video server.");
+          setActive(false);
+          setToken(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, token]);
 
   async function start() {
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`${API_URL}/v1/jitsi/token?room=${encodeURIComponent(room)}`, {
-        credentials: "include"
-      });
+      // moderator=1 for the two players, 0 for spectators.
+      const res = await fetch(
+        `${API_URL}/v1/jitsi/token?room=${encodeURIComponent(room)}&moderator=${isPlayer ? 1 : 0}`,
+        { credentials: "include" }
+      );
       if (!res.ok) {
         setError(res.status === 503 ? "Video calling isn't set up yet." : "Couldn't start the video call.");
         return;
       }
-      const { token } = await res.json();
-      const JitsiMeetExternalAPI = await loadJaasApi();
-      if (!containerRef.current) return;
-      apiRef.current = new JitsiMeetExternalAPI(JAAS_DOMAIN, {
-        roomName: `${APP_ID}/${room}`,
-        jwt: token,
-        parentNode: containerRef.current,
-        width: "100%",
-        height: "100%",
-        configOverwrite: {
-          prejoinPageEnabled: false,
-          disableDeepLinking: true,
-          startWithAudioMuted: false,
-          startWithVideoMuted: false
-        },
-        interfaceConfigOverwrite: {
-          MOBILE_APP_PROMO: false,
-          HIDE_INVITE_MORE_HEADER: true
-        }
-      });
-      apiRef.current.addEventListener("readyToClose", () => dispose());
-      setJoined(true);
-    } catch (e) {
-      setError((e as Error)?.message === "load" ? "Couldn't reach the video server." : "Couldn't start the video call.");
-      dispose();
+      const data = await res.json();
+      setToken(data.token);
+      setActive(true);
+    } catch {
+      setError("Couldn't start the video call.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="relative h-72 w-full overflow-hidden rounded-lg bg-black">
-        {/* Jitsi mounts its iframe here; the container is always in the DOM so the
-            ref exists before we create the call. */}
-        <div ref={containerRef} className="h-full w-full" />
-        {!joined && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[rgba(9,21,16,0.75)] px-3 text-center">
-            <button
-              className="btn-dark"
-              style={{ padding: "10px 16px", fontSize: "0.85rem" }}
-              onClick={start}
-              disabled={busy}
-            >
-              <IconVideo size={16} /> {busy ? "Starting…" : "Start video call"}
-            </button>
-            {error && <p className="text-[11px] text-[#e85050]">{error}</p>}
-          </div>
-        )}
-      </div>
-      {joined && (
-        <button
-          onClick={dispose}
-          className="self-center rounded-full bg-[rgba(184,24,24,0.85)] px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-[rgba(184,24,24,1)]"
-        >
-          Leave call
-        </button>
+    <>
+      {!active && (
+        <div className="flex flex-col gap-1">
+          <button
+            className="btn-dark w-full"
+            style={{ padding: "10px", fontSize: "0.85rem" }}
+            onClick={start}
+            disabled={busy}
+          >
+            <IconVideo size={16} /> {busy ? "Starting…" : "Start video call"}
+          </button>
+          {error && <p className="text-center text-[11px] text-[#e85050]">{error}</p>}
+        </div>
       )}
-    </div>
+
+      {/* Active call: a responsive overlay so Jitsi always has room for its controls —
+          full-screen on phones, a large centered panel on desktop. */}
+      {active && (
+        <div
+          className="fixed inset-0 z-[60] flex bg-black/85 p-0 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative m-auto flex h-full w-full max-w-5xl flex-col overflow-hidden bg-black sm:h-[85vh] sm:rounded-2xl">
+            <div ref={containerRef} className="min-h-0 w-full flex-1" />
+            <button
+              onClick={stop}
+              className="absolute right-3 top-3 z-10 rounded-full bg-[rgba(184,24,24,0.92)] px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:bg-[rgba(184,24,24,1)]"
+            >
+              Leave call
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

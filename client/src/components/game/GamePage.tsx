@@ -880,7 +880,9 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
           className="glass-dark rounded-2xl p-3"
           style={{ border: "1px solid rgba(201,162,39,0.15)" }}
         >
-          {lobby.white && lobby.black && lobby.code && <JitsiVideo gameCode={lobby.code} />}
+          {lobby.white && lobby.black && lobby.code && (
+            <JitsiVideo gameCode={lobby.code} isPlayer={lobby.side === "w" || lobby.side === "b"} />
+          )}
           <div className="mt-2 flex h-56 flex-col rounded-lg bg-[rgba(13,22,18,0.5)] p-3">
             <ul
               className="mb-3 flex flex-1 flex-col gap-1.5 overflow-y-auto break-words text-sm"

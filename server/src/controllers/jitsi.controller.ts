@@ -23,6 +23,9 @@ export const jitsiToken = async (req: Request, res: Response) => {
         return res.status(503).json({ error: "Video calling isn't set up yet." });
     }
 
+    // Players moderate the call; spectators join as regular participants.
+    const isModerator = req.query.moderator !== "0";
+
     const now = Math.floor(Date.now() / 1000);
     const header = { alg: "RS256", typ: "JWT", kid: KID };
     const payload = {
@@ -46,7 +49,7 @@ export const jitsiToken = async (req: Request, res: Response) => {
             },
             user: {
                 "hidden-from-recorder": false,
-                moderator: true,
+                moderator: isModerator,
                 name: user.name || "Player",
                 id: String(user.id),
                 avatar: "",
