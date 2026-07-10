@@ -3,6 +3,7 @@ import GameModel from "../db/models/game.model.js";
 import UserModel from "../db/models/user.model.js";
 import { db } from "../db/index.js";
 import { mintReward, tokenBalanceOf, isTokenConfigured, config as web3Config } from "../web3/arena.js";
+import { getPlayerBadges, mintBadgesFor, nftConfig } from "../web3/nft.js";
 
 const REWARD_WIN = Number(process.env.REWARD_WIN ?? 50);
 const REWARD_DRAW = Number(process.env.REWARD_DRAW ?? 10);
@@ -113,6 +114,11 @@ export const getUserRewards = async (req: Request, res: Response) => {
         if ((user.wins || 0) >= 10) achievements.push({ id: 2, name: "10 Wins", earned: true });
         if ((user.wins || 0) >= 100) achievements.push({ id: 3, name: "100 Wins", earned: true });
 
+        // Real on-chain badge NFTs the player holds (bool[4]). Also catch up any
+        // badge earned before the NFT existed (best-effort, non-blocking).
+        const badges = wallet ? await getPlayerBadges(wallet) : null;
+        if (wallet) void mintBadgesFor(wallet, user.wins || 0);
+
         return res.json({
             totalTokens,
             onChain,
@@ -124,6 +130,8 @@ export const getUserRewards = async (req: Request, res: Response) => {
             resignPenalty: RESIGN_PENALTY,
             conversion: conversionFor(totalTokens),
             achievements,
+            badges,
+            nftAddress: nftConfig.address,
             stats: {
                 wins: user.wins || 0,
                 losses: user.losses || 0,

@@ -1,6 +1,7 @@
 import type { Game, User } from "@arena/types";
 import { db } from "../index.js";
 import { mintReward, isTokenConfigured } from "../../web3/arena.js";
+import { mintBadgesFor } from "../../web3/nft.js";
 import WagerModel from "./wager.model.js";
 
 export const activeGames: Game[] = [];
@@ -30,7 +31,14 @@ const distributeRewards = async (game: Game, white: User, black: User): Promise<
         } else if (game.winner === "white" || game.winner === "black") {
             const winner = game.winner === "white" ? white : black;
             const w = await walletOf(winner.id);
-            if (w) await mintReward(w, REWARD_WIN);
+            if (w) {
+                await mintReward(w, REWARD_WIN);
+                // Mint any achievement badge NFTs this win just earned.
+                if (typeof winner.id === "number") {
+                    const wr = await db.query(`SELECT wins FROM "user" WHERE id=$1`, [winner.id]);
+                    await mintBadgesFor(w, wr.rowCount ? Number(wr.rows[0].wins) : 0);
+                }
+            }
             // (Resignation penalty is tracked in the DB only — players own their
             //  wallets now, so the platform can't burn from them without a signature.)
         }

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { config as web3Config, isTokenConfigured, isEscrowConfigured, minterAddress } from "../web3/arena.js";
 import { usdConfig, isUsdConfigured } from "../web3/usd.js";
+import { nftConfig } from "../web3/nft.js";
 import { SUBSCRIPTION_USD } from "./subscription.controller.js";
 
 const EXCHANGE_ADDRESS = (process.env.ARENA_EXCHANGE_ADDRESS || "").trim() || null;
@@ -26,6 +27,8 @@ export const getConfig = (_req: Request, res: Response) => {
         arenaToUsd: EXCHANGE_RATE > 0 ? 1 / EXCHANGE_RATE : 0.01,
         // Arena Pass (wager unlock): price in USD, paid to the treasury for admin verification
         subscriptionUsd: SUBSCRIPTION_USD,
-        treasuryAddress: minterAddress()
+        treasuryAddress: minterAddress(),
+        // soul-bound achievement badge NFTs
+        nftAddress: nftConfig.address
     });
 };

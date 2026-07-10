@@ -7,7 +7,7 @@ import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { tokenContract, toArenaWei, EXCHANGE_RATE } from "@/lib/contracts";
+import { tokenContract, toArenaWei, EXCHANGE_RATE, ARENA_NFT_ADDRESS } from "@/lib/contracts";
 import ExchangeModal from "@/components/exchange/ExchangeModal";
 import { useRouter } from "next/navigation";
 
@@ -35,6 +35,8 @@ interface RewardsData {
   resignPenalty?: number;
   conversion: Conversion;
   achievements: Achievement[];
+  badges?: boolean[] | null;
+  nftAddress?: string | null;
   stats: { wins: number; losses: number; draws: number; resignations?: number };
 }
 
@@ -297,14 +299,12 @@ export default function RewardsPage() {
         </div>
         <ul className="flex flex-col gap-2">
           {[
-            { Icon: IconMedal, name: "First Victory", desc: "Win your first game", need: 1, color: "#cd8b52" },
-            { Icon: IconMedal2, name: "Silver Champion", desc: "Win 10 games", need: 10, color: "#c8c8d0" },
-            { Icon: IconTrophy, name: "Gold Champion", desc: "Win 100 games", need: 100, color: "#E8C040" },
-            { Icon: IconStar, name: "Perfect Week", desc: "Win 7 in a row", need: null as number | null, color: "#a78bfa", soon: true },
+            { Icon: IconMedal, name: "First Victory", desc: "Win your first game", idx: 0, color: "#cd8b52" },
+            { Icon: IconMedal2, name: "Silver Champion", desc: "Win 10 games", idx: 1, color: "#c8c8d0" },
+            { Icon: IconTrophy, name: "Gold Champion", desc: "Win 100 games", idx: 2, color: "#E8C040" },
+            { Icon: IconStar, name: "Perfect Week", desc: "Win 7 in a row", idx: 3, color: "#a78bfa", soon: true },
           ].map((a) => {
-            const wins = rewards?.stats.wins || 0;
-            const earned = a.need != null && wins >= a.need;
-            const pct = a.need ? Math.min((wins / a.need) * 100, 100) : 0;
+            const earned = !!rewards?.badges?.[a.idx];
             return (
               <li
                 key={a.name}
@@ -312,7 +312,7 @@ export default function RewardsPage() {
                 style={{
                   background: earned ? "rgba(201,162,39,0.08)" : "rgba(13,22,18,0.5)",
                   border: `1px solid ${earned ? "rgba(201,162,39,0.3)" : "rgba(201,162,39,0.1)"}`,
-                  opacity: a.soon ? 0.55 : 1,
+                  opacity: a.soon && !earned ? 0.55 : 1,
                 }}
               >
                 <div
@@ -330,26 +330,26 @@ export default function RewardsPage() {
                     <span className="text-sm font-semibold text-[#d8ccb0]">{a.name}</span>
                     {earned && (
                       <span className="rounded-full bg-[rgba(95,184,132,0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#5fb884]">
-                        Earned
+                        Owned
                       </span>
                     )}
                   </div>
                   <p className="truncate text-xs text-[rgba(216,204,176,0.45)]">{a.desc}</p>
                 </div>
-                <div className="w-16 shrink-0 text-right">
-                  {a.soon ? (
+                <div className="shrink-0 text-right">
+                  {earned ? (
+                    <a
+                      href={`https://sepolia.etherscan.io/token/${ARENA_NFT_ADDRESS}?a=${rewards?.wallet ?? ""}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-semibold text-[#E8C040] underline-offset-2 hover:underline"
+                    >
+                      View NFT ↗
+                    </a>
+                  ) : a.soon ? (
                     <span className="text-[0.65rem] uppercase tracking-wide text-[rgba(216,204,176,0.35)]">Soon</span>
-                  ) : earned ? (
-                    <span className="text-lg text-[#5fb884]">✓</span>
                   ) : (
-                    <>
-                      <span className="text-xs tabular-nums text-[rgba(216,204,176,0.5)]">
-                        {wins}/{a.need}
-                      </span>
-                      <div className="mt-1 h-1 w-full rounded-full bg-[rgba(0,0,0,0.3)]">
-                        <div className="h-1 rounded-full bg-[#E8C040]" style={{ width: `${pct}%` }} />
-                      </div>
-                    </>
+                    <span className="text-[0.65rem] uppercase tracking-wide text-[rgba(216,204,176,0.35)]">Locked</span>
                   )}
                 </div>
               </li>

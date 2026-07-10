@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NODE_MODULES = join(__dirname, "node_modules");
 
-const SOURCES = ["ArenaToken.sol", "ArenaEscrow.sol", "TestUSD.sol", "ArenaExchange.sol"];
+const SOURCES = ["ArenaToken.sol", "ArenaEscrow.sol", "TestUSD.sol", "ArenaExchange.sol", "ArenaNFT.sol"];
 
 // solc import callback — resolve OZ (and any relative) imports from disk.
 function findImport(path) {
@@ -31,6 +31,7 @@ const input = {
   sources,
   settings: {
     optimizer: { enabled: true, runs: 200 },
+    evmVersion: "cancun", // Sepolia supports Cancun; OZ Base64/Bytes uses mcopy
     outputSelection: { "*": { "*": ["abi", "evm.bytecode.object"] } },
   },
 };
@@ -58,6 +59,7 @@ const wanted = {
   "ArenaEscrow.sol": "ArenaEscrow",
   "TestUSD.sol": "TestUSD",
   "ArenaExchange.sol": "ArenaExchange",
+  "ArenaNFT.sol": "ArenaNFT",
 };
 for (const [file, name] of Object.entries(wanted)) {
   const c = out.contracts[file][name];

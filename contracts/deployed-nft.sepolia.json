@@ -1,0 +1,7 @@
+{
+  "chainId": 11155111,
+  "network": "ethereum-sepolia",
+  "deployer": "0x8BC1B1243D7924E68C61fFDb14779aB6F8B094e6",
+  "ArenaNFT": "0x80db058f3371ef75e3c99c3102e5d9b4440939f5",
+  "explorer": "https://sepolia.etherscan.io/address/0x80db058f3371ef75e3c99c3102e5d9b4440939f5"
+}

@@ -16,6 +16,9 @@ export const ARENA_EXCHANGE_ADDRESS = "0xe12a87996f190e9e0242a84f6f6eb6e2a591495
 export const USDC_DECIMALS = 6;
 export const EXCHANGE_RATE = 100; // ARENA per 1 USDC (mirror contracts RATE)
 
+// Soul-bound achievement badge NFTs (ArenaNFT, Sepolia).
+export const ARENA_NFT_ADDRESS = "0x80db058f3371ef75e3c99c3102e5d9b4440939f5";
+
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 export const isExchangeReady =
   (ARENA_EXCHANGE_ADDRESS as string) !== ZERO_ADDR && (TEST_USD_ADDRESS as string) !== ZERO_ADDR;
