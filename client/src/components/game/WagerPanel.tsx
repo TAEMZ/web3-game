@@ -99,16 +99,27 @@ export default function WagerPanel({
     const s = Number(stake);
     if (!(s > 0)) return setError("Enter a stake greater than 0.");
     setBusy(true);
+    let reserved = false;
+    let activated = false;
     try {
-      // guard against a double-create race
-      const existing = await fetch(`${API_URL}/v1/wager/${gameCode}`, { credentials: "include" });
-      if (existing.ok) {
-        setError("A wager already exists for this game.");
+      // 1. Reserve the wager BEFORE the on-chain stake, so the opponent instantly
+      //    sees "opponent is placing a bet" and can't create a colliding wager.
+      const rz = await fetch(`${API_URL}/v1/wager/reserve`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gameCode, stake: s }),
+      });
+      if (!rz.ok) {
+        setError((await rz.json().catch(() => ({}))).error || "A wager already exists for this game.");
         await fetchWager();
         return;
       }
+      reserved = true;
+      await fetchWager();
+
       const stakeWei = toArenaWei(s);
-      if (!(await ensureBalance(stakeWei))) return;
+      if (!(await ensureBalance(stakeWei))) return; // error set; finally rolls back
       await approveStake(stakeWei);
       setStep("Placing your bet…");
       const createTx = prepareContractCall({
@@ -127,11 +138,23 @@ export default function WagerPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ gameCode, matchId, stake: s, wallet: account.address }),
       });
-      if (!res.ok) setError((await res.json().catch(() => ({}))).error || "Could not record bet.");
+      if (res.ok) activated = true;
+      else setError((await res.json().catch(() => ({}))).error || "Could not record bet.");
       await fetchWager();
     } catch (e) {
       setError((e as Error)?.message?.slice(0, 140) || "Transaction failed.");
     } finally {
+      // Reserved but never confirmed (balance fail, rejected tx, error) → release
+      // the reservation so the opponent isn't stuck seeing "staking".
+      if (reserved && !activated) {
+        await fetch(`${API_URL}/v1/wager/reserve/cancel`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ gameCode }),
+        }).catch(() => {});
+        await fetchWager();
+      }
       setBusy(false);
       setStep("");
     }
@@ -219,6 +242,13 @@ export default function WagerPanel({
 
       {!busy && !wager && !amPlayer && (
         <p className="text-xs text-[rgba(216,204,176,0.45)]">Only players can start a wager.</p>
+      )}
+
+      {!busy && wager?.state === "staking" && (
+        <p className="flex items-center gap-2 text-sm text-[#E8C040]">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
+          {wager.p1_user_id === myUserId ? "Finishing your bet…" : "Your opponent is placing a bet…"}
+        </p>
       )}
 
       {!busy && wager?.state === "open" && (
