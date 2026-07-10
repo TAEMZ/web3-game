@@ -3,12 +3,14 @@
 import { IconCoins, IconMedal, IconMedal2, IconStar, IconTrophy, IconArrowUpRight, IconArrowDownLeft, IconWallet } from "@tabler/icons-react";
 import { useContext, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
+import { prepareContractCall, readContract, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { tokenContract, toArenaWei, ARENA_NFT_ADDRESS } from "@/lib/contracts";
+import { tokenContract, toArenaWei, ARENA_NFT_ADDRESS, usdContract, usdcUnitsForArena, fromUsdcUnits } from "@/lib/contracts";
 import { useRouter } from "next/navigation";
+
+const BAL = "function balanceOf(address) view returns (uint256)";
 
 interface Achievement {
   id: number;
@@ -66,10 +68,11 @@ export default function RewardsPage() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // admin-verified top-up request — the only way to acquire ARENA (admin verifies & releases)
+  // buy ARENA with TestUSD, then an admin verifies the payment & releases (mints) — no instant swap
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [wallet, setWallet] = useState("");
+  const [treasury, setTreasury] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -88,6 +91,14 @@ export default function RewardsPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  // treasury address that receives the TestUSD payment (same wallet the Arena Pass pays)
+  useEffect(() => {
+    fetch(`${API_URL}/v1/config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c) => c?.treasuryAddress && setTreasury(c.treasuryAddress))
+      .catch(() => {});
+  }, []);
 
   async function load() {
     try {
@@ -112,7 +123,7 @@ export default function RewardsPage() {
 
   const rate = rewards?.conversion;
   const amt = Number(amount) || 0;
-  const previewUsd = rate ? (amt * rate.arenaToUsd).toFixed(2) : "0";
+  const usdcCost = amt > 0 ? fromUsdcUnits(usdcUnitsForArena(amt)) : 0;
   const wAmt = Number(wAmount) || 0;
   const wUsd = rate ? (wAmt * rate.arenaToUsd).toFixed(2) : "0";
   const balance = rewards?.totalTokens ?? 0;
@@ -121,23 +132,52 @@ export default function RewardsPage() {
     e.preventDefault();
     setNotice(null);
     if (!(amt > 0)) return setNotice("Enter an amount greater than 0.");
+    if (!account) return setNotice("Connect your wallet (top-right) to buy ARENA.");
+    if (!treasury) return setNotice("Payments aren't configured yet — try again shortly.");
+    const payTo = wallet || account.address;
     setSubmitting(true);
     try {
+      // 1) Pay in TestUSD — transfer the USDC cost to the treasury (real conversion, same as the Arena Pass).
+      const cost = usdcUnitsForArena(amt);
+      setNotice("Checking your USD…");
+      const bal = (await readContract({ contract: usdContract, method: BAL, params: [account.address] })) as bigint;
+      if (bal < cost) {
+        setNotice(`Not enough USD — you have $${fromUsdcUnits(bal).toFixed(2)}, need $${fromUsdcUnits(cost).toFixed(2)}.`);
+        return;
+      }
+      setNotice(`Paying $${fromUsdcUnits(cost).toFixed(2)} in USDC…`);
+      const tx = prepareContractCall({
+        contract: usdContract,
+        method: "function transfer(address to, uint256 amount) returns (bool)",
+        params: [treasury, cost],
+      });
+      const sent = await sendTransaction({ transaction: tx, account });
+      await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
+
+      // 2) File the request for admin verify & release — the admin still mints; we never release here.
+      setNotice("Submitting for verification…");
       const res = await fetch(`${API_URL}/v1/deposits`, {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amount: amt, method: "demo", reference, wallet: wallet || undefined }),
+        body: JSON.stringify({
+          amount: amt,
+          method: "usdc",
+          reference: `paid ${sent.transactionHash}${reference ? ` — ${reference}` : ""}`,
+          wallet: payTo,
+        }),
       });
       if (res.ok) {
-        setNotice("Request submitted! An admin will verify your payment and release your ARENA.");
+        setNotice("Payment sent! An admin will verify it and release your ARENA.");
         setAmount("");
         setReference("");
         await load();
       } else {
         const err = await res.json().catch(() => ({}));
-        setNotice(err.error || "Could not submit request.");
+        setNotice(err.error || "Paid, but the request didn't save — give an admin your tx hash.");
       }
+    } catch (err) {
+      setNotice((err as Error)?.message?.slice(0, 140) || "Transaction failed.");
     } finally {
       setSubmitting(false);
     }
@@ -255,9 +295,9 @@ export default function RewardsPage() {
           <IconArrowUpRight size={20} /> Buy ARENA
         </h2>
         <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Submit a top-up request and{" "}
+          Pay in test USDC and{" "}
           <span className="text-[#E8C040]">an admin verifies your payment and releases the ARENA</span> to your wallet.{" "}
-          <span className="text-[rgba(216,204,176,0.4)]">Demo only — no real payment.</span>
+          <span className="text-[rgba(216,204,176,0.4)]">Testnet play-money — not real cash.</span>
         </p>
 
         <form onSubmit={submitTopUp} className="grid gap-3 sm:grid-cols-2">
@@ -292,14 +332,14 @@ export default function RewardsPage() {
           </label>
 
           <div className="sm:col-span-2">
-            {amt > 0 && rate && (
+            {amt > 0 && (
               <p className="mb-3 text-xs text-[rgba(216,204,176,0.6)]">
-                {amt} ARENA ≈ <span className="font-semibold text-[#E8C040]">${previewUsd}</span> of play credit
+                {amt} ARENA — you pay <span className="font-semibold text-[#E8C040]">${usdcCost.toFixed(2)}</span> in test USDC
               </p>
             )}
             {notice && <p className="mb-3 text-xs text-[#5fb884]">{notice}</p>}
             <button type="submit" disabled={submitting} className="btn-gold w-full sm:w-auto">
-              {submitting ? "Submitting…" : "Request top-up"}
+              {submitting ? "Working…" : amt > 0 ? `Pay $${usdcCost.toFixed(2)} in USDC` : "Buy ARENA"}
             </button>
           </div>
         </form>
