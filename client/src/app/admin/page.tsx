@@ -552,21 +552,21 @@ export default function AdminPage() {
               {r.status === "open" && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    onClick={() => r.reported_id && ban(r.reported_id, r.reported_name, false)}
+                    onClick={() => r.reported_id && confirmBan(r.reported_id, r.reported_name, false)}
                     disabled={!r.reported_id || busy === `ban-${r.reported_id}`}
                     className="rounded-full bg-[rgba(184,24,24,0.2)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.35)] disabled:opacity-30"
                   >
                     Ban player
                   </button>
                   <button
-                    onClick={() => r.reported_id && ban(r.reported_id, r.reported_name, true)}
+                    onClick={() => r.reported_id && confirmBan(r.reported_id, r.reported_name, true)}
                     disabled={!r.reported_id || busy === `ban-${r.reported_id}`}
                     className="rounded-full bg-[rgba(184,24,24,0.2)] px-3 py-1.5 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.35)] disabled:opacity-30"
                   >
                     Ban + block IP
                   </button>
                   <button
-                    onClick={() => resolve(r.id)}
+                    onClick={() => confirmResolve(r.id)}
                     disabled={busy === `res-${r.id}`}
                     className="rounded-full border border-[rgba(201,162,39,0.3)] px-3 py-1.5 text-xs font-semibold text-[#d8ccb0] transition hover:bg-[rgba(201,162,39,0.12)]"
                   >
