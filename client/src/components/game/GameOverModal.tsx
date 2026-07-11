@@ -32,6 +32,8 @@ function reasonText(reason: Game["endReason"]): string {
       return "by insufficient material";
     case "abandoned":
       return "by abandonment";
+    case "timeout":
+      return "on time";
     default:
       return "";
   }

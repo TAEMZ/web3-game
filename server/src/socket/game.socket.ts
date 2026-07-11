@@ -33,10 +33,79 @@ async function concludeGame(game: Game, chess: Chess) {
 
     const saved = (await GameModel.save(game)) as Game;
     game.id = saved.id;
-    io.to(game.code as string).emit("gameOver", { reason, winnerName, winnerSide, id: saved.id });
+    io.to(game.code as string).emit("gameOver", { reason, winnerName, winnerSide, id: saved.id, clock: clockPayload(game) });
 
     if (game.timeout) clearTimeout(game.timeout);
+    if (game.flagTimer) clearTimeout(game.flagTimer);
     activeGames.splice(activeGames.indexOf(game), 1);
+}
+
+// ---- Chess clock (server-authoritative) --------------------------------------
+const CLOCK_MS = Number(process.env.GAME_CLOCK_MS ?? 10 * 60 * 1000); // 10 min each
+
+// Remaining time for both sides right now (the side to move is counting down).
+function clockPayload(game: Game) {
+    if (!game.clock) return undefined;
+    const chess = new Chess();
+    if (game.pgn) chess.loadPgn(game.pgn);
+    const running = chess.turn(); // side to move — its clock is ticking
+    const elapsed = Date.now() - game.clock.startedAt;
+    return {
+        w: running === "w" ? Math.max(0, game.clock.w - elapsed) : game.clock.w,
+        b: running === "b" ? Math.max(0, game.clock.b - elapsed) : game.clock.b,
+        turn: running,
+        running: !game.endReason && !game.winner
+    };
+}
+
+function emitClock(game: Game) {
+    if (game.clock) io.to(game.code as string).emit("clock", clockPayload(game));
+}
+
+// Start the clock once both humans are seated (never for bot games).
+function ensureClock(game: Game) {
+    if (game.clock || game.vsBot) return;
+    if (!game.white?.id || !game.black?.id) return;
+    game.clock = { w: CLOCK_MS, b: CLOCK_MS, startedAt: Date.now() };
+}
+
+// (Re)arm the flag timer for the side to move; fires if they run out of time.
+function armFlag(game: Game) {
+    if (game.flagTimer) {
+        clearTimeout(game.flagTimer);
+        game.flagTimer = undefined;
+    }
+    if (!game.clock || game.endReason || game.winner) return;
+    const chess = new Chess();
+    if (game.pgn) chess.loadPgn(game.pgn);
+    const side = chess.turn();
+    const remaining = side === "w" ? game.clock.w : game.clock.b;
+    game.flagTimer = Number(setTimeout(() => void flagPlayer(game, side), Math.max(0, remaining)));
+}
+
+// The side to move ran out of time — end the game, opponent wins.
+async function flagPlayer(game: Game, side: "w" | "b") {
+    if (game.endReason || game.winner) return;
+    if (game.clock) {
+        if (side === "w") game.clock.w = 0;
+        else game.clock.b = 0;
+    }
+    game.endReason = "timeout";
+    game.winner = side === "w" ? "black" : "white";
+    const saved = (await GameModel.save(game)) as Game;
+    game.id = saved.id;
+    const winnerName = game.winner === "white" ? game.white?.name : game.black?.name;
+    io.to(game.code as string).emit("gameOver", {
+        reason: "timeout",
+        winnerName,
+        winnerSide: game.winner,
+        id: saved.id,
+        clock: clockPayload(game)
+    });
+    if (game.timeout) clearTimeout(game.timeout);
+    if (game.flagTimer) clearTimeout(game.flagTimer);
+    const idx = activeGames.indexOf(game);
+    if (idx >= 0) activeGames.splice(idx, 1);
 }
 
 export async function joinLobby(this: Socket, gameCode: string) {
@@ -81,6 +150,7 @@ export async function joinLobby(this: Socket, gameCode: string) {
 
     await this.join(gameCode);
     io.to(game.code as string).emit("receivedLatestGame", game);
+    if (game.clock) this.emit("clock", clockPayload(game));
 }
 
 export async function leaveLobby(this: Socket, reason?: DisconnectReason, code?: string) {
@@ -230,7 +300,10 @@ export async function resign(this: Socket) {
 // eslint-disable-next-line no-unused-vars
 export async function getLatestGame(this: Socket) {
     const game = activeGames.find((g) => g.code === Array.from(this.rooms)[1]);
-    if (game) this.emit("receivedLatestGame", game);
+    if (game) {
+        this.emit("receivedLatestGame", game);
+        if (game.clock) this.emit("clock", clockPayload(game));
+    }
 }
 
 export async function sendMove(this: Socket, m: { from: string; to: string; promotion?: string }) {
@@ -257,6 +330,14 @@ export async function sendMove(this: Socket, m: { from: string; to: string; prom
         }
 
         game.pgn = chess.pgn();
+        // Deduct the elapsed time from the player who just moved; hand the clock over.
+        if (game.clock) {
+            const now = Date.now();
+            const elapsed = now - game.clock.startedAt;
+            if (prevTurn === "w") game.clock.w = Math.max(0, game.clock.w - elapsed);
+            else game.clock.b = Math.max(0, game.clock.b - elapsed);
+            game.clock.startedAt = now;
+        }
         this.to(game.code as string).emit("receivedMove", m);
 
         if (chess.isGameOver()) {
@@ -278,6 +359,10 @@ export async function sendMove(this: Socket, m: { from: string; to: string; prom
                 }
             }
         }
+
+        // Re-arm the flag for whoever is to move now, and push the fresh clock.
+        armFlag(game);
+        emitClock(game);
     } catch (e) {
         console.log("sendMove error: " + e);
         this.emit("receivedLatestGame", game);
@@ -318,7 +403,10 @@ export async function joinAsPlayer(this: Socket) {
     } else {
         console.log("joinAsPlayer: attempted to join a game with already 2 players");
     }
+    ensureClock(game);
+    armFlag(game);
     io.to(game.code as string).emit("receivedLatestGame", game);
+    emitClock(game);
 }
 
 export async function chat(this: Socket, message: string) {

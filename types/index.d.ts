@@ -4,11 +4,15 @@ export interface Game {
     white?: User;
     black?: User;
     winner?: "white" | "black" | "draw";
-    endReason?: "draw" | "checkmate" | "stalemate" | "repetition" | "insufficient" | "abandoned" | "resignation";
+    endReason?: "draw" | "checkmate" | "stalemate" | "repetition" | "insufficient" | "abandoned" | "resignation" | "timeout";
     host?: User;
     code?: string;
     unlisted?: boolean;
     timeout?: number;
+    // Chess clock: remaining ms per side + when the running side's turn began.
+    clock?: { w: number; b: number; startedAt: number };
+    flagTimer?: number; // server-only: setTimeout id for the flag/timeout
+
     observers?: User[];
     startedAt?: number;
     endedAt?: number;

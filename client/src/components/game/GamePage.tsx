@@ -94,6 +94,18 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
   // Floating emote reactions (both players + spectators).
   const [emotes, setEmotes] = useState<{ id: number; key: string; from: string; mine?: boolean }[]>([]);
   const emoteId = useRef(0);
+
+  // Chess clock: server-authoritative value, ticked locally between server syncs.
+  const [clock, setClock] = useState<
+    { w: number; b: number; turn: "w" | "b"; running: boolean; syncedAt: number } | null
+  >(null);
+  const [, tickClock] = useState(0);
+  useEffect(() => {
+    if (!clock?.running || lobby.endReason) return;
+    const iv = setInterval(() => tickClock((t) => t + 1), 250);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clock?.running, clock?.turn, clock?.syncedAt, lobby.endReason]);
   function pushEmote(key: string, from: string, mine = false) {
     const id = emoteId.current++;
     setEmotes((prev) => [...prev, { id, key, from, mine }]);
@@ -156,7 +168,8 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       setNavFen,
       setNavIndex,
       onGameOver: (payload) => setGameOverData(payload),
-      onEmote: ({ key, from }) => pushEmote(key, from, false)
+      onEmote: ({ key, from }) => pushEmote(key, from, false),
+      onClock: (payload) => setClock({ ...payload, syncedAt: Date.now() })
     });
 
     return () => {
@@ -403,6 +416,22 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
     socket.emit("joinAsPlayer");
   }
 
+  // Remaining ms for a side; deducts locally while its clock is the running one.
+  function clockMs(color: "white" | "black"): number | null {
+    if (!clock) return null;
+    const side = color === "white" ? "w" : "b";
+    let ms = side === "w" ? clock.w : clock.b;
+    if (clock.running && !lobby.endReason && clock.turn === side) {
+      ms = Math.max(0, ms - (Date.now() - clock.syncedAt));
+    }
+    return ms;
+  }
+
+  function fmtClock(ms: number) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
   function playerCard(color: "white" | "black") {
     const p = color === "white" ? lobby.white : lobby.black;
     const isYou = !!p && p.id === session?.user?.id;
@@ -462,6 +491,21 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             )}
           </div>
         </div>
+        {clockMs(color) !== null && (
+          <span
+            className="shrink-0 font-mono text-lg font-bold tabular-nums"
+            style={{
+              color:
+                clock?.running && !lobby.endReason && clock.turn === (color === "white" ? "w" : "b")
+                  ? clockMs(color)! <= 30000
+                    ? "#e06666"
+                    : "#E8C040"
+                  : "rgba(216,204,176,0.55)",
+            }}
+          >
+            {fmtClock(clockMs(color)!)}
+          </span>
+        )}
         {yourTurn && (
           <span className="flex shrink-0 items-center gap-1.5 text-[0.7rem] font-semibold text-[#E8C040]">
             <span className="relative flex h-2 w-2">

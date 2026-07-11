@@ -23,6 +23,7 @@ export function initSocket(
             gameId: number;
         }) => void;
         onEmote?: (payload: { key: string; from: string }) => void;
+        onClock?: (payload: { w: number; b: number; turn: "w" | "b"; running: boolean }) => void;
     }
 ) {
     socket.on("connect", () => {
@@ -36,6 +37,10 @@ export function initSocket(
 
     socket.on("emote", (payload: { key: string; from: string }) => {
         actions.onEmote?.(payload);
+    });
+
+    socket.on("clock", (payload: { w: number; b: number; turn: "w" | "b"; running: boolean }) => {
+        actions.onClock?.(payload);
     });
 
     socket.on("receivedLatestGame", (latestGame: Game) => {
@@ -67,12 +72,14 @@ export function initSocket(
             reason,
             winnerName,
             winnerSide,
-            id
+            id,
+            clock
         }: {
             reason: Game["endReason"];
             winnerName?: string;
             winnerSide?: "white" | "black" | "draw";
             id: number;
+            clock?: { w: number; b: number; turn: "w" | "b"; running: boolean };
         }) => {
             const m = {
                 author: { name: "server" }
@@ -88,6 +95,8 @@ export function initSocket(
                 m.message = `${winnerName} (${winnerSide}) has won by checkmate.`;
             } else if (reason === "resignation") {
                 m.message = `${winnerName} (${winnerSide}) has won by resignation.`;
+            } else if (reason === "timeout") {
+                m.message = `${winnerName} (${winnerSide}) has won on time.`;
             } else {
                 let message = "The game has ended in a draw";
                 if (reason === "repetition") {
@@ -104,6 +113,9 @@ export function initSocket(
                 payload: { endReason: reason, winner: winnerSide || "draw", id }
             });
             actions.addMessage(m);
+
+            // Freeze the clocks at their final values (running:false stops the ticker).
+            if (clock && actions.onClock) actions.onClock(clock);
 
             // Surface a game-over screen to EVERYONE in the room (both players and
             // spectators). GamePage decides win/loss/draw from the viewer's side.
