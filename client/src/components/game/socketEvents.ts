@@ -24,7 +24,6 @@ export function initSocket(
         }) => void;
         onEmote?: (payload: { key: string; from: string }) => void;
         onClock?: (payload: { w: number; b: number; turn: "w" | "b"; running: boolean }) => void;
-        onCancelled?: () => void;
     }
 ) {
     socket.on("connect", () => {
@@ -42,11 +41,6 @@ export function initSocket(
 
     socket.on("clock", (payload: { w: number; b: number; turn: "w" | "b"; running: boolean }) => {
         actions.onClock?.(payload);
-    });
-
-    // The game was cancelled before it started (not a resignation) — leave the board.
-    socket.on("gameCancelled", () => {
-        actions.onCancelled?.();
     });
 
     socket.on("receivedLatestGame", (latestGame: Game) => {
