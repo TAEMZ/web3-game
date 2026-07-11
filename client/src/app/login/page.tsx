@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useContext, useEffect, useState } from "react";
 
+import { useActiveWallet, useDisconnect } from "thirdweb/react";
+
 import { SessionContext } from "@/context/session";
 import { login, register, setGuestSession } from "@/lib/auth";
 
@@ -15,6 +17,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<ViewMode>("login");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const activeWallet = useActiveWallet();
+  const { disconnect } = useDisconnect();
 
   // Once signed in, go to the admin console (admins) or the player dashboard.
   useEffect(() => {
@@ -33,8 +37,11 @@ export default function LoginPage() {
     if (!name) return;
     setLoading(true);
     const user = await setGuestSession(name);
-    if (user) session?.setUser(user);
-    else setMsg("Could not start a guest session. Try a different name.");
+    if (user) {
+      // A guest must not carry the previous player's still-connected wallet.
+      if (activeWallet) disconnect(activeWallet);
+      session?.setUser(user);
+    } else setMsg("Could not start a guest session. Try a different name.");
     setLoading(false);
   }
 
