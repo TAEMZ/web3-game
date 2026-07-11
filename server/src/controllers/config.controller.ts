@@ -5,7 +5,8 @@ import { nftConfig } from "../web3/nft.js";
 import { SUBSCRIPTION_USD } from "./subscription.controller.js";
 
 const EXCHANGE_ADDRESS = (process.env.ARENA_EXCHANGE_ADDRESS || "").trim() || null;
-const EXCHANGE_RATE = Number(process.env.EXCHANGE_RATE ?? 100); // ARENA per 1 USDC
+// $1 = 100 ARENA — keep in sync with the client's EXCHANGE_RATE (client/src/lib/contracts.ts).
+const EXCHANGE_RATE = 100; // ARENA per 1 USDC
 
 // Public runtime config so the client can pick up the deployed contract
 // addresses + economy settings without a rebuild (filled into server/.env at

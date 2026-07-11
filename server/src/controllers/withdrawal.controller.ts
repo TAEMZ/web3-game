@@ -4,7 +4,8 @@ import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { tokenBalanceOf, isTokenConfigured } from "../web3/arena.js";
 
-const ARENA_TO_USD = Number(process.env.ARENA_TO_USD ?? 0.1);
+// $1 = 100 ARENA — keep in sync with the client's EXCHANGE_RATE (client/src/lib/contracts.ts).
+const ARENA_TO_USD = 1 / 100; // 0.01
 const USD_TO_BIRR = Number(process.env.USD_TO_BIRR ?? 57);
 
 const walletOfUser = async (userId: number): Promise<string | null> => {

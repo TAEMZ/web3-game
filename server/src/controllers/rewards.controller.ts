@@ -12,8 +12,10 @@ const LOSS_PENALTY = Number(process.env.LOSS_PENALTY ?? 3);
 
 // Conversion rate — derived from the exchange rate so the "$ worth" shown here
 // matches what USDC actually buys/sells (1 USDC = EXCHANGE_RATE ARENA).
-const EXCHANGE_RATE = Number(process.env.EXCHANGE_RATE ?? 100); // ARENA per 1 USDC
-const ARENA_TO_USD = Number(process.env.ARENA_TO_USD ?? (EXCHANGE_RATE > 0 ? 1 / EXCHANGE_RATE : 0.01));
+// $1 = 100 ARENA — keep in sync with the client's EXCHANGE_RATE (client/src/lib/contracts.ts).
+// Hardcoded (not env) so the "worth" shown here can never drift from the buy/sell rate.
+const EXCHANGE_RATE = 100; // ARENA per 1 USDC
+const ARENA_TO_USD = 1 / EXCHANGE_RATE; // 0.01
 const USD_TO_BIRR = Number(process.env.USD_TO_BIRR ?? 57); // 1 USD ≈ 57 ETB
 
 const walletOfUser = async (userId: number): Promise<string | null> => {
