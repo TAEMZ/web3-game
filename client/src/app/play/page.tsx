@@ -37,6 +37,8 @@ export default function PlayPlans() {
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showStake, setShowStake] = useState(false);
+  const [stakeInput, setStakeInput] = useState("");
 
   useEffect(() => {
     fetch(`${API_URL}/v1/config`)
@@ -81,10 +83,11 @@ export default function PlayPlans() {
     router.push("/casual");
   }
 
-  async function createWager() {
+  async function createWager(stake: number) {
     setError(null);
+    setShowStake(false);
     setCreating(true);
-    const game = await createGame("random", false, { mode: "wager" });
+    const game = await createGame("random", false, { mode: "wager", stake });
     if (game) router.push(`/${game.code}`);
     else {
       setError("Couldn't create the match — try again.");
@@ -211,7 +214,15 @@ export default function PlayPlans() {
               <div className="mt-6 flex items-center justify-center gap-1.5 rounded-lg bg-[rgba(26,107,63,0.14)] py-1.5 text-xs font-semibold text-[#5fb884]">
                 <IconCheck size={14} /> Arena Pass active
               </div>
-              <button onClick={createWager} disabled={creating} className="btn-gold mt-3 w-full">
+              <button
+                onClick={() => {
+                  setStakeInput("");
+                  setError(null);
+                  setShowStake(true);
+                }}
+                disabled={creating}
+                className="btn-gold mt-3 w-full"
+              >
                 {creating ? "Creating…" : "Create Wager Match"}
               </button>
             </>
@@ -248,6 +259,55 @@ export default function PlayPlans() {
           All balances are testnet play-money — no real funds involved.
         </p>
       </div>
+
+      {/* Set-the-stake modal — the stake is chosen up-front so the match lists with
+          its pool and the opponent knows what they're matching before joining. */}
+      {showStake && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={creating ? undefined : () => setShowStake(false)}
+        >
+          <div
+            className="glass-dark animate-fade-in-up w-full max-w-sm rounded-3xl p-6"
+            style={{ border: "1px solid rgba(201,162,39,0.35)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-display flex items-center gap-2 text-lg font-black text-[#E8C040]">
+              <IconCoins size={20} /> Set your stake
+            </h2>
+            <p className="mt-1 text-xs text-[rgba(216,204,176,0.55)]">
+              How much ARENA to wager. Your opponent matches it — winner takes the pot minus the platform fee.
+            </p>
+            <label className="field-label mt-4 block">Stake (ARENA)</label>
+            <input
+              type="number"
+              min={1}
+              autoFocus
+              value={stakeInput}
+              onChange={(e) => setStakeInput(e.target.value)}
+              placeholder="e.g. 500"
+              className="w-full rounded-xl border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2.5 text-lg font-bold text-[#e8dcc0] tabular-nums outline-none focus:border-[rgba(201,162,39,0.6)]"
+            />
+            {Number(stakeInput) > 0 && (
+              <p className="mt-2 text-xs text-[rgba(216,204,176,0.6)]">
+                Pot if matched: <span className="font-bold text-[#E8C040] tabular-nums">{Math.floor(Number(stakeInput)) * 2} ARENA</span>
+              </p>
+            )}
+            <div className="mt-5 flex gap-2">
+              <button onClick={() => setShowStake(false)} disabled={creating} className="btn-dark flex-1 text-sm">
+                Cancel
+              </button>
+              <button
+                onClick={() => createWager(Math.floor(Number(stakeInput)))}
+                disabled={!(Number(stakeInput) > 0) || creating}
+                className="btn-gold flex-1 text-sm disabled:opacity-40"
+              >
+                {creating ? "Creating…" : "Create match"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

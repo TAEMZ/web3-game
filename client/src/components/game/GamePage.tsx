@@ -819,6 +819,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             gameCode={lobby.code}
             myUserId={session?.user?.id as number | undefined}
             amPlayer={lobby.side === "w" || lobby.side === "b"}
+            presetStake={lobby.stake}
           />
         )}
 

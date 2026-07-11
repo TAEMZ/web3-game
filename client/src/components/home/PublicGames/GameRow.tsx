@@ -15,12 +15,16 @@ export default function GameRow({
   black,
   whiteId,
   blackId,
+  mode,
+  stake,
 }: {
   code: string;
   white?: string;
   black?: string;
   whiteId?: string | number;
   blackId?: string | number;
+  mode?: "casual" | "wager";
+  stake?: number;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -49,11 +53,18 @@ export default function GameRow({
               {white || "?"} <span className="text-[rgba(216,204,176,0.4)]">vs</span>{" "}
               {black || <span className="text-[rgba(216,204,176,0.4)]">waiting…</span>}
             </div>
-            <span
-              className="text-[0.68rem] font-semibold uppercase tracking-wider"
-              style={{ color: live ? "#5fb884" : "rgba(216,204,176,0.4)" }}
-            >
-              {live ? "Live now" : "Open seat"}
+            <span className="flex items-center gap-2">
+              <span
+                className="text-[0.68rem] font-semibold uppercase tracking-wider"
+                style={{ color: live ? "#5fb884" : "rgba(216,204,176,0.4)" }}
+              >
+                {live ? "Live now" : "Open seat"}
+              </span>
+              {mode === "wager" && !!stake && (
+                <span className="rounded bg-[rgba(201,162,39,0.16)] px-1.5 py-0.5 text-[0.6rem] font-bold tabular-nums text-[#E8C040]">
+                  💰 {stake} ARENA pool
+                </span>
+              )}
             </span>
           </div>
         </div>

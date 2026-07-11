@@ -19,6 +19,7 @@ export interface Game {
     vsBot?: boolean;
     botDifficulty?: "easy" | "medium" | "hard";
     mode?: "casual" | "wager"; // wager games mount the betting panel; casual never do
+    stake?: number; // wager stake (ARENA) chosen at creation; shown on the live list before joining
 }
 
 export interface User {

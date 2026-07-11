@@ -107,12 +107,17 @@ export const createGame = async (req: Request, res: Response) => {
             }
         }
 
+        // Wager stake chosen up-front (0 = not set yet; the player can still set it
+        // in-game). Stored on the game so the live list can show the pool before joining.
+        const stakeAmt = mode === "wager" ? Math.max(0, Math.floor(Number(req.body.stake) || 0)) : 0;
+
         const game: Game = {
             code: nanoid(6),
             // Computer games are always private — no reason to list them publicly.
             unlisted: vsBot ? true : unlisted,
             host: user,
             mode,
+            ...(stakeAmt > 0 ? { stake: stakeAmt } : {}),
             pgn: ""
         };
 

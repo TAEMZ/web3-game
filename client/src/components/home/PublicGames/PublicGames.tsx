@@ -39,6 +39,8 @@ export default async function PublicGames() {
                 black={game.black?.name || undefined}
                 whiteId={game.white?.id}
                 blackId={game.black?.id}
+                mode={game.mode}
+                stake={game.stake}
               />
             ))}
           </ul>

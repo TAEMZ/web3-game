@@ -250,17 +250,17 @@ export default function GameOverModal({
               <div className="mb-3 rounded-lg border border-[rgba(95,184,132,0.25)] bg-[rgba(95,184,132,0.06)] p-3 text-sm">
                 <p className="mb-1.5 font-semibold text-[#5fb884]">Wager payout</p>
                 <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-[rgba(216,204,176,0.65)]">Pot</span>
-                    <span className="tabular-nums text-[#d8ccb0]">{wagerPot} ARENA</span>
+                  <div className="flex justify-between text-base font-bold">
+                    <span className="text-[#5fb884]">You received</span>
+                    <span className="tabular-nums text-[#5fb884]">{wagerReceived} ARENA</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[rgba(216,204,176,0.65)]">System cut ({HOUSE_FEE_PERCENT}%)</span>
                     <span className="tabular-nums text-[#e06666]">−{wagerCut} ARENA</span>
                   </div>
-                  <div className="flex justify-between border-t border-[rgba(95,184,132,0.2)] pt-1 font-semibold">
-                    <span className="text-[#5fb884]">You received</span>
-                    <span className="tabular-nums text-[#5fb884]">{wagerReceived} ARENA</span>
+                  <div className="flex justify-between border-t border-[rgba(95,184,132,0.2)] pt-1">
+                    <span className="text-[rgba(216,204,176,0.65)]">Pool (both stakes)</span>
+                    <span className="tabular-nums text-[#d8ccb0]">{wagerPot} ARENA</span>
                   </div>
                 </div>
               </div>

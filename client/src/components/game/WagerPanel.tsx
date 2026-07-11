@@ -41,15 +41,17 @@ export default function WagerPanel({
   gameCode,
   myUserId,
   amPlayer,
+  presetStake,
 }: {
   gameCode: string;
   myUserId?: number;
   amPlayer: boolean;
+  presetStake?: number;
 }) {
   const account = useActiveAccount();
   const [wager, setWager] = useState<Wager | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [stake, setStake] = useState("");
+  const [stake, setStake] = useState(presetStake && presetStake > 0 ? String(presetStake) : "");
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -224,6 +226,16 @@ export default function WagerPanel({
             <p className="rounded-lg bg-[rgba(201,162,39,0.08)] px-3 py-2 text-xs text-[#E8C040]">
               Connect your wallet (top-right) to place a bet.
             </p>
+          ) : presetStake && presetStake > 0 ? (
+            <div>
+              <p className="mb-2 text-sm text-[#d8ccb0]">
+                Your stake: <span className="font-bold text-[#E8C040] tabular-nums">{presetStake} ARENA</span>
+                <span className="text-xs text-[rgba(216,204,176,0.4)]"> · set at match creation</span>
+              </p>
+              <button onClick={create} className="btn-gold w-full text-sm">
+                Place your {presetStake} ARENA bet
+              </button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <input
