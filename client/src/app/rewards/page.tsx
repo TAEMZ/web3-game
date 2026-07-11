@@ -318,11 +318,6 @@ export default function RewardsPage() {
               ≈ <span className="font-semibold text-[#E8C040] tabular-nums">${displayUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> USD
             </p>
           )}
-          {showOnChain && walletUsd !== null && (
-            <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
-              plus <span className="font-semibold text-[#5fb884] tabular-nums">${walletUsd.toFixed(2)}</span> test USDC in your wallet
-            </p>
-          )}
           {(rewards?.penalty || 0) > 0 && (
             <p className="mt-2 text-xs text-red-400">
               −{rewards?.penalty} ARENA from {rewards?.stats.losses} loss
@@ -331,16 +326,24 @@ export default function RewardsPage() {
           )}
         </div>
 
-        {/* wallet line */}
-        <div className="mt-2 flex items-center justify-center gap-2 border-t border-[rgba(201,162,39,0.15)] pt-4 text-xs">
-          <IconWallet size={15} className="text-[rgba(216,204,176,0.5)]" />
-          {rewards?.walletLinked ? (
-            <span className="font-mono text-[rgba(216,204,176,0.6)]">
-              {rewards.wallet?.slice(0, 6)}…{rewards.wallet?.slice(-4)}
-            </span>
-          ) : (
-            <span className="text-[rgba(216,204,176,0.5)]">
-              No wallet linked — connect one in the account menu to hold tokens
+        {/* wallet line + live spendable USDC (read from the connected wallet) */}
+        <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-[rgba(201,162,39,0.15)] pt-4 text-xs">
+          <div className="flex items-center gap-2">
+            <IconWallet size={15} className="text-[rgba(216,204,176,0.5)]" />
+            {rewards?.walletLinked ? (
+              <span className="font-mono text-[rgba(216,204,176,0.6)]">
+                {rewards.wallet?.slice(0, 6)}…{rewards.wallet?.slice(-4)}
+              </span>
+            ) : (
+              <span className="text-[rgba(216,204,176,0.5)]">
+                No wallet linked — connect one in the account menu to hold tokens
+              </span>
+            )}
+          </div>
+          {showOnChain && walletUsd !== null && (
+            <span className="text-[rgba(216,204,176,0.55)]">
+              Spendable balance:{" "}
+              <span className="font-semibold text-[#5fb884] tabular-nums">${walletUsd.toFixed(2)}</span> test USDC
             </span>
           )}
         </div>
