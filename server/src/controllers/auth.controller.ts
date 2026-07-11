@@ -111,14 +111,22 @@ export const registerUser = async (req: Request, res: Response) => {
 
         const name = xss(req.body.name);
         const email = xss(req.body.email);
-        const password = await hash(req.body.password);
+        const rawPassword = String(req.body.password || "");
 
         const pattern = /^[A-Za-z0-9]+$/;
-
         if (!pattern.test(name)) {
-            res.status(400).end();
+            res.status(400).json({ message: "Username must be letters and numbers only." });
             return;
         }
+        // Enforce a reasonably strong password server-side (never trust the client):
+        // at least 8 characters, with at least one letter and one number.
+        if (rawPassword.length < 8 || !/[A-Za-z]/.test(rawPassword) || !/[0-9]/.test(rawPassword)) {
+            res.status(400).json({
+                message: "Password must be at least 8 characters and include a letter and a number."
+            });
+            return;
+        }
+        const password = await hash(rawPassword);
 
         const compareEmail = email || name;
         const duplicateUsers = await UserModel.findByNameEmail({ name, email: compareEmail });

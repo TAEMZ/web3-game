@@ -73,6 +73,11 @@ export default function LoginPage() {
     const password = (f.elements.namedItem("password") as HTMLInputElement).value;
     const email = (f.elements.namedItem("email") as HTMLInputElement)?.value || undefined;
     if (!username || !password) return;
+    // Instant feedback — the server enforces the same rule.
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setMsg("Password must be at least 8 characters and include a letter and a number.");
+      return;
+    }
     setLoading(true);
     const user = await register(username, password, email);
     if (typeof user === "string") setMsg(user);

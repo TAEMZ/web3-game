@@ -76,9 +76,9 @@ export const register = async (name: string, password: string, email?: string) =
             const user: User = await res.json();
             clearSignedOut();
             return user;
-        } else if (res.status === 409) {
-            const { message } = await res.json();
-            return message as string;
+        } else if (res.status === 409 || res.status === 400) {
+            const { message } = await res.json().catch(() => ({}));
+            if (message) return message as string;
         }
     } catch (err) {
         console.error(err);
