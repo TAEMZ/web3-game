@@ -1,13 +1,13 @@
 "use client";
 
 import { IconCoins, IconMedal, IconMedal2, IconStar, IconTrophy, IconArrowUpRight, IconArrowDownLeft, IconWallet } from "@tabler/icons-react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { prepareContractCall, readContract, sendTransaction, waitForReceipt } from "thirdweb";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
-import { tokenContract, toArenaWei, ARENA_NFT_ADDRESS, usdContract, usdcUnitsForArena, fromUsdcUnits } from "@/lib/contracts";
+import { tokenContract, toArenaWei, ARENA_NFT_ADDRESS, usdContract, usdcUnitsForArena, fromUsdcUnits, fromArenaWei } from "@/lib/contracts";
 import { useRouter } from "next/navigation";
 
 const BAL = "function balanceOf(address) view returns (uint256)";
@@ -82,6 +82,31 @@ export default function RewardsPage() {
   const [wSubmitting, setWSubmitting] = useState(false);
   const [wNotice, setWNotice] = useState<string | null>(null);
 
+  // Live on-chain balances of the CONNECTED wallet — the same source the wallet's
+  // "View Assets" reads, so the numbers here match it and reflect every buy/sell.
+  const [walletUsd, setWalletUsd] = useState<number | null>(null);
+  const [walletArena, setWalletArena] = useState<number | null>(null);
+  const refreshWallet = useCallback(async () => {
+    if (!account) {
+      setWalletUsd(null);
+      setWalletArena(null);
+      return;
+    }
+    try {
+      const [u, a] = await Promise.all([
+        readContract({ contract: usdContract, method: BAL, params: [account.address] }) as Promise<bigint>,
+        readContract({ contract: tokenContract, method: BAL, params: [account.address] }) as Promise<bigint>,
+      ]);
+      setWalletUsd(fromUsdcUnits(u));
+      setWalletArena(fromArenaWei(a));
+    } catch {
+      /* ignore transient RPC read errors */
+    }
+  }, [account]);
+  useEffect(() => {
+    refreshWallet();
+  }, [refreshWallet]);
+
   useEffect(() => {
     if (!session || session.user === undefined) return; // still checking auth
     if (!session.user) {
@@ -126,7 +151,13 @@ export default function RewardsPage() {
   const usdcCost = amt > 0 ? fromUsdcUnits(usdcUnitsForArena(amt)) : 0;
   const wAmt = Number(wAmount) || 0;
   const wUsd = rate ? (wAmt * rate.arenaToUsd).toFixed(2) : "0";
-  const balance = rewards?.totalTokens ?? 0;
+  // The connected wallet's real on-chain balance is authoritative — it's what the
+  // wallet's "View Assets" shows and what a cash-out can actually burn. The server
+  // figure can be a DB estimate when the on-chain read / wallet link is unavailable.
+  const serverBalance = rewards?.totalTokens ?? 0;
+  const showOnChain = !!account && walletArena !== null;
+  const balance = showOnChain ? (walletArena as number) : serverBalance;
+  const displayUsd = rate ? balance * rate.arenaToUsd : 0;
 
   async function submitTopUp(e: React.FormEvent) {
     e.preventDefault();
@@ -172,6 +203,7 @@ export default function RewardsPage() {
         setAmount("");
         setReference("");
         await load();
+        await refreshWallet();
       } else {
         const err = await res.json().catch(() => ({}));
         setNotice(err.error || "Paid, but the request didn't save — give an admin your tx hash.");
@@ -213,6 +245,7 @@ export default function RewardsPage() {
         setWAmount("");
         setPayoutTo("");
         await load();
+        await refreshWallet();
       } else {
         const err = await res.json().catch(() => ({}));
         setWNotice(err.error || "Could not submit request.");
@@ -249,21 +282,26 @@ export default function RewardsPage() {
           </h2>
           <span
             className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${
-              rewards?.onChain
+              showOnChain || rewards?.onChain
                 ? "bg-[rgba(95,184,132,0.15)] text-[#5fb884]"
                 : "bg-[rgba(216,204,176,0.1)] text-[rgba(216,204,176,0.5)]"
             }`}
           >
-            {rewards?.onChain ? "● On-chain · Sepolia" : "Off-chain estimate"}
+            {showOnChain || rewards?.onChain ? "● On-chain · Sepolia" : "Off-chain estimate"}
           </span>
         </div>
 
         <div className="py-4 text-center">
-          <div className="mb-1 text-6xl font-bold gold-text-shimmer tabular-nums">{rewards?.totalTokens ?? 0}</div>
+          <div className="mb-1 text-6xl font-bold gold-text-shimmer tabular-nums">{balance.toLocaleString()}</div>
           <p className="text-sm text-[rgba(216,204,176,0.6)]">ARENA tokens</p>
           {rate && (
             <p className="mt-2 text-sm text-[#d8ccb0]">
-              ≈ <span className="font-semibold text-[#E8C040] tabular-nums">${rate.usd.toLocaleString()}</span> USD
+              ≈ <span className="font-semibold text-[#E8C040] tabular-nums">${displayUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> USD
+            </p>
+          )}
+          {showOnChain && walletUsd !== null && (
+            <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
+              plus <span className="font-semibold text-[#5fb884] tabular-nums">${walletUsd.toFixed(2)}</span> test USDC in your wallet
             </p>
           )}
           {(rewards?.penalty || 0) > 0 && (
