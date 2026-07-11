@@ -25,13 +25,10 @@ export default function WalletAuth() {
     // The user explicitly logged out — keep the wallet connected, but don't
     // re-authenticate from it until they deliberately sign in again.
     if (isSignedOut()) return;
-    // Admins don't use wallets. A stale wallet auto-reconnecting from a previous
-    // player must never bridge into (and hijack/merge) an admin session.
-    // Admins never use wallets — a stale connected wallet must not show as theirs.
-    if (user?.is_admin) {
-      if (activeWallet) disconnect(activeWallet);
-      return;
-    }
+    // Admins don't use wallets — never bridge a connected wallet into an admin
+    // session (that was the "admin shows a player's profile" bug). Just leave the
+    // wallet as-is; don't disconnect it (that surprised admins mid-session).
+    if (user?.is_admin) return;
     const address = account.address.toLowerCase();
     if (user?.walletAddress === address) return; // already your linked wallet
     if (busy.current) return;
@@ -39,10 +36,10 @@ export default function WalletAuth() {
     (async () => {
       const u = await walletLogin(address, (message) => account.signMessage({ message }));
       if (u) session?.setUser(u);
-      // The wallet couldn't sign in as / link to the current user (it's someone
-      // else's, or you already have a different one) — disconnect it so it isn't
-      // shown as yours. A guest connecting their OWN wallet succeeds above (drip).
-      else if (activeWallet) disconnect(activeWallet);
+      // Only drop a wallet that failed to bind to an ALREADY logged-in user (a stale
+      // wallet that isn't theirs). NEVER disconnect for a logged-out / fresh session —
+      // a signed-out user keeps their wallet connected.
+      else if (user?.id && activeWallet) disconnect(activeWallet);
       busy.current = false;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
