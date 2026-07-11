@@ -3,6 +3,7 @@ import WithdrawalModel from "../db/models/withdrawal.model.js";
 import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { tokenBalanceOf, isTokenConfigured } from "../web3/arena.js";
+import { mintUsd, isUsdConfigured } from "../web3/usd.js";
 
 // $1 = 100 ARENA — keep in sync with the client's EXCHANGE_RATE (client/src/lib/contracts.ts).
 const ARENA_TO_USD = 1 / 100; // 0.01
@@ -14,8 +15,8 @@ const walletOfUser = async (userId: number): Promise<string | null> => {
 };
 
 // ── Player ────────────────────────────────────────────────────────────────
-// Request a cash-out: convert ARENA back to birr. The player can't withdraw more
-// than their real on-chain balance. Admin pays the birr off-chain and marks paid.
+// Request a cash-out: convert ARENA back to test USDC. The player can't cash out
+// more than their real on-chain balance; approving it releases the USDC on-chain.
 export const requestWithdrawal = async (req: Request, res: Response) => {
     const user = req.session?.user;
     if (!user?.id || typeof user.id !== "number") return res.status(401).end();
@@ -63,9 +64,10 @@ export const listWithdrawals = async (req: Request, res: Response) => {
     return res.json({ withdrawals });
 };
 
-// Admin confirms the cash was sent and marks the request paid. The player already
-// burned their own ARENA (signed client-side) when they requested the cash-out,
-// so there's nothing to deduct here.
+// Admin approves the cash-out. The player already burned their ARENA (signed
+// client-side) when requesting; here we release the equivalent test USDC back to
+// their wallet, so the conversion reflects in their balance (mirrors how a buy
+// releases ARENA). If the on-chain payout fails, we leave it pending to retry.
 export const payWithdrawal = async (req: Request, res: Response) => {
     if (!isAdminUser(req.session?.user)) return res.status(403).end();
     const id = Number(req.params.id);
@@ -73,6 +75,14 @@ export const payWithdrawal = async (req: Request, res: Response) => {
     if (!w) return res.status(404).json({ error: "Withdrawal not found" });
     if (w.status !== "pending") return res.status(409).json({ error: `Already ${w.status}` });
 
+    if (isUsdConfigured() && w.wallet && w.usd) {
+        const tx = await mintUsd(w.wallet, Number(w.usd));
+        if (!tx) return res.status(502).json({ error: "USDC payout failed on-chain — left pending, try again." });
+        await WithdrawalModel.setStatus(id, "paid", req.session!.user!.name || "admin");
+        return res.json({ paid: true, tx });
+    }
+
+    // No web3 configured → mark paid (admin settles off-chain, legacy behaviour).
     await WithdrawalModel.setStatus(id, "paid", req.session!.user!.name || "admin");
     return res.json({ paid: true });
 };

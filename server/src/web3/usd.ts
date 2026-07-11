@@ -93,6 +93,35 @@ export async function dripUsdIfLow(address: string): Promise<Hash | null> {
     }
 }
 
+/**
+ * Release an exact amount of demo USD to a wallet — used to pay out a cash-out
+ * (player burned ARENA → we return the USDC), mirroring how a buy releases ARENA.
+ * Best-effort; returns the tx hash or null. Serialized on the treasury nonce.
+ */
+export async function mintUsd(to: string, wholeUsd: number): Promise<Hash | null> {
+    if (!isUsdConfigured() || !isAddr(to) || !(wholeUsd > 0)) return null;
+    try {
+        const value = parseUnits(wholeUsd.toFixed(DECIMALS), DECIMALS);
+        const hash = await serializeTreasury(async () => {
+            const h = await wallet().writeContract({
+                address: getAddress(USD) as Address,
+                abi: usdAbi,
+                functionName: "mint",
+                args: [getAddress(to) as Address, value],
+                chain: CHAIN,
+                account: wallet().account!
+            });
+            await pub().waitForTransactionReceipt({ hash: h });
+            return h;
+        });
+        console.log(`[usd] released ${wholeUsd} USDC -> ${to}  tx=${hash}`);
+        return hash;
+    } catch (err) {
+        console.warn(`[usd] mintUsd failed for ${to}:`, (err as Error).message);
+        return null;
+    }
+}
+
 export const usdConfig = {
     address: USD || null,
     decimals: DECIMALS,
