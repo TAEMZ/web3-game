@@ -107,6 +107,25 @@ export default function RewardsPage() {
     refreshWallet();
   }, [refreshWallet]);
 
+  // Keep the balance and the deposit/withdrawal logs in sync with reality: refetch
+  // both when the tab regains focus (e.g. after an admin releases a buy or pays out
+  // a cash-out), so the balance always matches the transaction history shown.
+  useEffect(() => {
+    const sync = () => {
+      if (document.visibilityState === "visible") {
+        load();
+        refreshWallet();
+      }
+    };
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshWallet]);
+
   useEffect(() => {
     if (!session || session.user === undefined) return; // still checking auth
     if (!session.user) {
