@@ -433,11 +433,12 @@ export const walletLogin = async (req: Request, res: Response) => {
         if (su && typeof su.id === "number" && !su.walletAddress) {
             const existing = await UserModel.findByWallet(address);
             if (existing && existing.id !== su.id) {
-                if (existing.is_admin) {
-                    res.status(400).json({ message: "That wallet is linked to another account." });
-                    return;
-                }
-                await UserModel.mergeInto(su.id, existing.id as number);
+                // NEVER absorb/merge another account from a wallet connect — a stale
+                // wallet left connected in the browser would otherwise silently delete
+                // its owner's account (and hand you their data). Reject and keep the
+                // current session untouched; to use that wallet's account, sign in as it.
+                res.status(409).json({ message: "That wallet is already linked to another account." });
+                return;
             }
             await UserModel.linkWallet(su.id, address);
             const fresh = await UserModel.findById(su.id);
