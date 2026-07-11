@@ -54,7 +54,11 @@ export default function LoginPage() {
     setLoading(true);
     const user = await login(username, password);
     if (typeof user === "string") setMsg(user);
-    else if (user?.id) session?.setUser(user);
+    else if (user?.id) {
+      // Password login ≠ wallet auth — drop any wallet left connected by a previous user.
+      if (activeWallet) disconnect(activeWallet);
+      session?.setUser(user);
+    }
     setLoading(false);
   }
 
@@ -68,7 +72,11 @@ export default function LoginPage() {
     setLoading(true);
     const user = await register(username, password, email);
     if (typeof user === "string") setMsg(user);
-    else if (user?.id) session?.setUser(user);
+    else if (user?.id) {
+      // New account starts clean — drop any wallet left connected by a previous user.
+      if (activeWallet) disconnect(activeWallet);
+      session?.setUser(user);
+    }
     setLoading(false);
   }
 

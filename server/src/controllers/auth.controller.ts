@@ -425,19 +425,26 @@ export const walletLogin = async (req: Request, res: Response) => {
         void fundGasIfLow(address);
         void dripUsdIfLow(address);
 
-        // If the visitor is already signed in with a username account that has no
-        // wallet yet, LINK this wallet to that account instead of creating a
-        // separate wallet-keyed user. If the wallet had already become its own
-        // account (a duplicate), absorb that account into the signed-in one.
+        // Already signed in as a REGISTERED account? A wallet connection must NEVER
+        // switch you to (or merge in) a different account — a stale wallet left
+        // connected in the browser would otherwise hand you someone else's account.
+        // Only link it to your account if it's unclaimed and you have none yet;
+        // otherwise reject and leave your session exactly as it is.
         const su = req.session.user;
-        if (su && typeof su.id === "number" && !su.walletAddress) {
+        if (su && typeof su.id === "number") {
+            const suWallet = su.walletAddress?.toLowerCase();
+            if (suWallet === address) {
+                // already your linked wallet — nothing to change
+                req.session.save(() => res.status(200).json(su));
+                return;
+            }
             const existing = await UserModel.findByWallet(address);
             if (existing && existing.id !== su.id) {
-                // NEVER absorb/merge another account from a wallet connect — a stale
-                // wallet left connected in the browser would otherwise silently delete
-                // its owner's account (and hand you their data). Reject and keep the
-                // current session untouched; to use that wallet's account, sign in as it.
                 res.status(409).json({ message: "That wallet is already linked to another account." });
+                return;
+            }
+            if (suWallet && suWallet !== address) {
+                res.status(409).json({ message: "Your account already has a different wallet linked." });
                 return;
             }
             await UserModel.linkWallet(su.id, address);

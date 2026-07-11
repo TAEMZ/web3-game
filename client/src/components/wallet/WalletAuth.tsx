@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
 
 import { SessionContext } from "@/context/session";
 import { isSignedOut, walletLogin } from "@/lib/auth";
@@ -10,6 +10,8 @@ import { isSignedOut, walletLogin } from "@/lib/auth";
 // connected and we're not already signed in as it, ask for a signature and log in.
 export default function WalletAuth() {
   const account = useActiveAccount();
+  const activeWallet = useActiveWallet();
+  const { disconnect } = useDisconnect();
   const session = useContext(SessionContext);
   const busy = useRef(false);
 
@@ -25,17 +27,22 @@ export default function WalletAuth() {
     if (isSignedOut()) return;
     // Admins don't use wallets. A stale wallet auto-reconnecting from a previous
     // player must never bridge into (and hijack/merge) an admin session.
-    if (user?.is_admin) return;
-    // Note: a guest CAN upgrade by connecting their own wallet (that's how they get
-    // the gas/USDC drip). A stale wallet from a previous player can't hijack a guest,
-    // because entering guest mode disconnects any connected wallet (see login page).
+    // Admins never use wallets — a stale connected wallet must not show as theirs.
+    if (user?.is_admin) {
+      if (activeWallet) disconnect(activeWallet);
+      return;
+    }
     const address = account.address.toLowerCase();
-    if (user?.walletAddress === address) return;
+    if (user?.walletAddress === address) return; // already your linked wallet
     if (busy.current) return;
     busy.current = true;
     (async () => {
       const u = await walletLogin(address, (message) => account.signMessage({ message }));
       if (u) session?.setUser(u);
+      // The wallet couldn't sign in as / link to the current user (it's someone
+      // else's, or you already have a different one) — disconnect it so it isn't
+      // shown as yours. A guest connecting their OWN wallet succeeds above (drip).
+      else if (activeWallet) disconnect(activeWallet);
       busy.current = false;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
