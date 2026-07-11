@@ -3,7 +3,9 @@ import { Chess } from "chess.js";
 import type { DisconnectReason, Socket } from "socket.io";
 
 import GameModel, { activeGames } from "../db/models/game.model.js";
+import WagerModel from "../db/models/wager.model.js";
 import { getBotMove } from "../bot/index.js";
+import { cancelWagerMatch } from "../web3/arena.js";
 import { io } from "../server.js";
 
 // TODO: clean up
@@ -308,6 +310,33 @@ export async function resign(this: Socket) {
 
     if (game.timeout) clearTimeout(game.timeout);
     activeGames.splice(activeGames.indexOf(game), 1);
+}
+
+// Cancel an unstarted game — a clean exit that is NOT a resignation (no loss). Only
+// before the first move; once a move is played, leaving is a resign. For wager games
+// a funded match can't be cancelled (both staked — play or settle); an open
+// (creator-only) stake is refunded on-chain, and a pending reserve is just dropped.
+export async function cancelGame(this: Socket) {
+    const game = activeGames.find((g) => g.code === Array.from(this.rooms)[1]);
+    if (!game || game.endReason || game.winner) return;
+    const uid = this.request.session.user.id;
+    if (game.white?.id !== uid && game.black?.id !== uid) return; // players only
+    if (game.pgn) return; // a move was played → resignation, not a cancel
+
+    if (game.mode === "wager" && game.code) {
+        const w = await WagerModel.findByGameCode(game.code);
+        if (w) {
+            if (w.state === "funded" || w.state === "settled") return; // both staked — can't cancel
+            if (w.state === "open" && w.match_id != null) await cancelWagerMatch(w.match_id); // refund creator
+            await WagerModel.markCancelled(w.id);
+        }
+    }
+
+    io.to(game.code as string).emit("gameCancelled");
+    if (game.timeout) clearTimeout(game.timeout);
+    if (game.flagTimer) clearTimeout(game.flagTimer);
+    const idx = activeGames.indexOf(game);
+    if (idx >= 0) activeGames.splice(idx, 1);
 }
 
 // eslint-disable-next-line no-unused-vars

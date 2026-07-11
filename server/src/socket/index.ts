@@ -2,6 +2,7 @@ import type { Socket } from "socket.io";
 
 import { io } from "../server.js";
 import {
+    cancelGame,
     chat,
     claimAbandoned,
     emote,
@@ -40,6 +41,7 @@ const socketConnect = (socket: Socket) => {
     socket.on("rtcSignal", rtcSignal);
     socket.on("claimAbandoned", claimAbandoned);
     socket.on("resign", resign);
+    socket.on("cancelGame", cancelGame);
 };
 
 export const init = () => {

@@ -51,6 +51,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
   const session = useContext(SessionContext);
   const { setGuard } = useNavGuard();
   const [showResignConfirm, setShowResignConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const [lobby, updateLobby] = useReducer(lobbyReducer, {
     ...initialLobby,
@@ -169,7 +170,11 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       setNavIndex,
       onGameOver: (payload) => setGameOverData(payload),
       onEmote: ({ key, from }) => pushEmote(key, from, false),
-      onClock: (payload) => setClock({ ...payload, syncedAt: Date.now() })
+      onClock: (payload) => setClock({ ...payload, syncedAt: Date.now() }),
+      onCancelled: () => {
+        setGuard(null);
+        window.location.href = "/";
+      }
     });
 
     return () => {
@@ -683,6 +688,23 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
         }}
         onCancel={() => setShowResignConfirm(false)}
       />
+      <ConfirmDialog
+        open={showCancelConfirm}
+        title="Cancel this game?"
+        message={
+          lobby.mode === "wager"
+            ? "The match is removed before it starts — not a resignation, no loss. If you already staked, your ARENA is refunded."
+            : "The match is removed before it starts. This is not a resignation — no loss."
+        }
+        confirmLabel="Cancel game"
+        cancelLabel="Keep waiting"
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          setGuard(null);
+          socket.emit("cancelGame");
+        }}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
       {showReport && opponent?.name && (
         <ReportModal
           reportedName={opponent.name}
@@ -842,6 +864,13 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                 className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)]"
               >
                 Resign
+              </button>
+            ) : (lobby.side === "w" || lobby.side === "b") && !lobby.endReason && !lobby.winner ? (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="rounded-full border border-[rgba(201,162,39,0.35)] px-3 py-1 text-xs font-semibold text-[rgba(216,204,176,0.7)] transition hover:bg-[rgba(201,162,39,0.12)]"
+              >
+                Cancel game
               </button>
             ) : (
               <span className="text-xs uppercase tracking-widest text-[rgba(216,204,176,0.35)]">

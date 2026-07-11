@@ -228,6 +228,30 @@ export async function settleWagerDraw(matchId: number): Promise<Hash | null> {
     }
 }
 
+/** Cancel an OPEN (unmatched) wager, refunding the creator's stake. Server holds SETTLER_ROLE. */
+export async function cancelWagerMatch(matchId: number): Promise<Hash | null> {
+    if (!isEscrowConfigured()) return null;
+    try {
+        const hash = await serializeTreasury(async () => {
+            const h = await wallet().writeContract({
+                address: getAddress(ESCROW) as Address,
+                abi: escrowAbi,
+                functionName: "cancelMatch",
+                args: [BigInt(matchId)],
+                chain: CHAIN,
+                account: wallet().account!
+            });
+            await pub().waitForTransactionReceipt({ hash: h });
+            return h;
+        });
+        console.log(`[web3] cancelled wager #${matchId} (refunded creator)  tx=${hash}`);
+        return hash;
+    } catch (err) {
+        console.error(`[web3] cancelWagerMatch #${matchId} failed:`, (err as Error).message);
+        return null;
+    }
+}
+
 export const config = {
     token: TOKEN || null,
     escrow: ESCROW || null,
