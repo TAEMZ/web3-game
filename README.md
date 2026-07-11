@@ -14,6 +14,7 @@ Chess runs off-chain; the blockchain is only touched at login (wallet top-ups), 
 - Live 1v1 multiplayer via WebSockets
 - Real-time video chat and text messaging
 - Move history navigation
+- 10-minute chess clock per side (server-authoritative, auto-flag on timeout)
 - Resign/quit functionality
 - Spectator mode
 
@@ -30,7 +31,7 @@ Chess runs off-chain; the blockchain is only touched at login (wallet top-ups), 
 - **USDC / TestUSD** (ERC-20, 6 decimals) — demo "dollars"; **100 dripped on sign-in**
 - **Exchange** — swap USDC ↔ ARENA at a fixed **100 ARENA = 1 USDC** (ARENA ≈ $0.01)
 - **Subscription** — one-time **500 ARENA** unlocks wager mode
-- **Wager escrow** — both players stake equal ARENA, winner takes the pot
+- **Wager escrow** — both players stake equal ARENA, winner takes the pot (minus a 15% house fee)
 - **Achievement NFTs** (soul-bound, on-chain SVG): 🎖️ First Victory (1 win) ·
   🥈 Silver (10) · 🥇 Gold (100) · ⭐ Perfect Week (7 in a row)
 - Auto gas: players are topped up with a little Sepolia ETH so they never buy test-ETH
