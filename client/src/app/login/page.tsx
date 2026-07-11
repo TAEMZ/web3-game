@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useContext, useEffect, useState } from "react";
 
-import { useActiveWallet, useDisconnect } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
 
 import { SessionContext } from "@/context/session";
 import { login, register, setGuestSession } from "@/lib/auth";
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<ViewMode>("login");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const account = useActiveAccount();
   const activeWallet = useActiveWallet();
   const { disconnect } = useDisconnect();
 
@@ -55,8 +56,11 @@ export default function LoginPage() {
     const user = await login(username, password);
     if (typeof user === "string") setMsg(user);
     else if (user?.id) {
-      // Password login ≠ wallet auth — drop any wallet left connected by a previous user.
-      if (activeWallet) disconnect(activeWallet);
+      // Drop a connected wallet only if it isn't THIS account's own — your linked
+      // wallet stays (no reconnect), a previous user's wallet is cleared.
+      if (activeWallet && account?.address?.toLowerCase() !== user.walletAddress?.toLowerCase()) {
+        disconnect(activeWallet);
+      }
       session?.setUser(user);
     }
     setLoading(false);
@@ -73,8 +77,10 @@ export default function LoginPage() {
     const user = await register(username, password, email);
     if (typeof user === "string") setMsg(user);
     else if (user?.id) {
-      // New account starts clean — drop any wallet left connected by a previous user.
-      if (activeWallet) disconnect(activeWallet);
+      // New account has no linked wallet — drop any wallet a previous user left connected.
+      if (activeWallet && account?.address?.toLowerCase() !== user.walletAddress?.toLowerCase()) {
+        disconnect(activeWallet);
+      }
       session?.setUser(user);
     }
     setLoading(false);

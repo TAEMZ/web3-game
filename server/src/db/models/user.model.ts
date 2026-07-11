@@ -44,7 +44,7 @@ export const findByNameEmail = async (user: User, includePassword = false, limit
                 `SELECT id, name, email, wins, losses, draws FROM "user" LIMIT $1`,
                 [limit ?? 10]
             );
-            return res.rows as (User & { password?: string })[];
+            return res.rows as (User & { password?: string; wallet_address?: string })[];
         } catch (err: unknown) {
             console.log(err);
             return null;
@@ -53,12 +53,12 @@ export const findByNameEmail = async (user: User, includePassword = false, limit
 
     try {
         const res = await db.query(
-            `SELECT id, name, email, wins, losses, draws, is_admin, banned${
+            `SELECT id, name, email, wins, losses, draws, is_admin, banned, wallet_address, subscribed${
                 includePassword ? `, password` : ""
             } FROM "user" WHERE name=$1 OR email=$2 LIMIT $3`,
             [user.name, user.email, limit ?? 1]
         );
-        return res.rows as (User & { password?: string })[];
+        return res.rows as (User & { password?: string; wallet_address?: string })[];
     } catch (err: unknown) {
         console.log(err);
         return null;

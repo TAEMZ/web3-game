@@ -252,6 +252,10 @@ export const loginUser = async (req: Request, res: Response) => {
             wins: users[0].wins,
             losses: users[0].losses,
             draws: users[0].draws,
+            // Carry the linked wallet so the client can tell YOUR wallet from a
+            // stranger's left connected — and keep yours without a reconnect.
+            walletAddress: users[0].wallet_address || undefined,
+            subscribed: users[0].subscribed,
             is_admin: isAdminUser(users[0])
         };
         if (req.session.user.is_admin && typeof users[0].id === "number") {
