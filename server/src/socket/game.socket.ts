@@ -62,10 +62,13 @@ function emitClock(game: Game) {
     if (game.clock) io.to(game.code as string).emit("clock", clockPayload(game));
 }
 
-// Start the clock once both humans are seated (never for bot games).
-function ensureClock(game: Game) {
+// Start the clock once both humans are seated (never for bot games). For a WAGER
+// match the clock must NOT start while players are still placing the bet — only
+// once the wager is funded (wagerReady) or the game is already in motion.
+function ensureClock(game: Game, wagerReady = false) {
     if (game.clock || game.vsBot) return;
     if (!game.white?.id || !game.black?.id) return;
+    if (game.mode === "wager" && !wagerReady) return;
     game.clock = { w: CLOCK_MS, b: CLOCK_MS, startedAt: Date.now() };
 }
 
@@ -106,6 +109,16 @@ async function flagPlayer(game: Game, side: "w" | "b") {
     if (game.flagTimer) clearTimeout(game.flagTimer);
     const idx = activeGames.indexOf(game);
     if (idx >= 0) activeGames.splice(idx, 1);
+}
+
+// Called when a wager is funded (both bets placed): the match is now live, so start
+// the clock that was deferred during betting and push it to both players.
+export function startWagerClock(gameCode: string) {
+    const game = activeGames.find((g) => g.code === gameCode);
+    if (!game) return;
+    ensureClock(game, true);
+    armFlag(game);
+    emitClock(game);
 }
 
 export async function joinLobby(this: Socket, gameCode: string) {
@@ -309,6 +322,9 @@ export async function getLatestGame(this: Socket) {
 export async function sendMove(this: Socket, m: { from: string; to: string; promotion?: string }) {
     const game = activeGames.find((g) => g.code === Array.from(this.rooms)[1]);
     if (!game || game.endReason || game.winner) return;
+    // A move proves the match is live — start the clock if it wasn't already (safety
+    // net for wager games should the funded trigger not have fired).
+    ensureClock(game, true);
     const chess = new Chess();
     if (game.pgn) {
         chess.loadPgn(game.pgn);

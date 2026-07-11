@@ -5,6 +5,7 @@ import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
 import { withKeyLock } from "../util/locks.js";
 import { settleWager, settleWagerDraw, isEscrowConfigured } from "../web3/arena.js";
+import { startWagerClock } from "../socket/game.socket.js";
 
 const HOUSE_FEE_PERCENT = Number(process.env.HOUSE_FEE_PERCENT || "15");
 
@@ -86,6 +87,7 @@ export const joinWager = async (req: Request, res: Response) => {
             if (userId === wager.p1_user_id) return { code: 400, body: { error: "Cannot join your own wager" } };
             const updated = await WagerModel.join(wager.match_id, userId, wallet);
             if (!updated) return { code: 409, body: { error: "Wager not open to join" } };
+            startWagerClock(gameCode); // wager funded → the match is live, start the clock
             return { code: 200, body: { wager: updated } };
         });
         return res.status(result.code).json(result.body);
