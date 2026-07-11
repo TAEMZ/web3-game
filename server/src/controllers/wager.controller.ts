@@ -106,6 +106,12 @@ export const reserveWager = async (req: Request, res: Response) => {
     const stake = Number(req.body.stake);
     if (!gameCode || !(stake > 0)) return res.status(400).json({ error: "gameCode, stake required" });
     if (!gameParticipant(gameCode, userId)) return res.status(403).json({ error: "Not a player in that game" });
+    // Only the match creator opens the wager (places the first stake). The opponent
+    // matches it via join — this keeps the creator as p1 and prevents a role swap.
+    const gameForHost = activeGames.find((x) => x.code === gameCode);
+    if (gameForHost?.host?.id != null && String(gameForHost.host.id) !== String(userId)) {
+        return res.status(403).json({ error: "Only the match creator can open the wager." });
+    }
 
     try {
         const result = await withKeyLock(`wager:${gameCode}`, async () => {

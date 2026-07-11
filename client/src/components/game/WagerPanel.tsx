@@ -41,11 +41,13 @@ export default function WagerPanel({
   gameCode,
   myUserId,
   amPlayer,
+  isCreator,
   presetStake,
 }: {
   gameCode: string;
   myUserId?: number;
   amPlayer: boolean;
+  isCreator?: boolean;
   presetStake?: number;
 }) {
   const account = useActiveAccount();
@@ -217,7 +219,15 @@ export default function WagerPanel({
         </div>
       )}
 
-      {!busy && !wager && amPlayer && (
+      {/* Only the match creator places the opening bet; the opponent just matches it. */}
+      {!busy && !wager && amPlayer && !isCreator && (
+        <p className="flex items-center gap-2 text-sm text-[#E8C040]">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
+          Waiting for the match creator to place {presetStake ? `their ${presetStake} ARENA bet` : "their bet"}…
+        </p>
+      )}
+
+      {!busy && !wager && amPlayer && isCreator && (
         <>
           <p className="mb-2 text-xs text-[rgba(216,204,176,0.55)]">
             Bet ARENA from your wallet — winner takes the pot minus {HOUSE_FEE_PERCENT}% platform fee. You&apos;ll approve + stake (gas is on us).
