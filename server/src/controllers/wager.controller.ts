@@ -147,8 +147,15 @@ export const cancelReserve = async (req: Request, res: Response) => {
 };
 
 export const getWager = async (req: Request, res: Response) => {
-    const wager = await WagerModel.findByGameCode(req.params.gameCode);
-    if (!wager) return res.status(404).json({ error: "No wager for this game" });
+    const w = await WagerModel.findByGameCode(req.params.gameCode);
+    if (!w) return res.status(404).json({ error: "No wager for this game" });
+    // Never expose players' on-chain wallet addresses — anyone can hit this with an
+    // enumerable game code, and it would deanonymize a chess handle to a funded wallet.
+    // The client only needs stake / state / ids, not the wallets.
+    const { p1_wallet, p2_wallet, winner_wallet, ...wager } = w;
+    void p1_wallet;
+    void p2_wallet;
+    void winner_wallet;
     return res.json({ wager });
 };
 

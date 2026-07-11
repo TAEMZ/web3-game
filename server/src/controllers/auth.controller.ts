@@ -42,9 +42,10 @@ export const guestSession = async (req: Request, res: Response) => {
         }
 
         if (!req.session.user || !req.session.user?.id) {
-            // create guest session
+            // create guest session. The guest's user id must NOT be the session id
+            // (that would broadcast the auth credential to the room) — use a random id.
             const user: User = {
-                id: req.session.id,
+                id: `g-${nanoid(16)}`,
                 name
             };
             req.session.user = user;
