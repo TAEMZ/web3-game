@@ -144,6 +144,8 @@ export const INIT_TABLES = /* sql */ `
     );
     CREATE INDEX IF NOT EXISTS idx_withdrawal_status ON "withdrawal"(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_withdrawal_user ON "withdrawal"(user_id);
+    ALTER TABLE "withdrawal" ADD COLUMN IF NOT EXISTS burn_tx VARCHAR(80);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_withdrawal_burn_tx ON "withdrawal"(burn_tx) WHERE burn_tx IS NOT NULL;
 
     -- Performance indexes
     CREATE INDEX IF NOT EXISTS idx_game_white_id ON "game"(white_id);

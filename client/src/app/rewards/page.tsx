@@ -257,7 +257,7 @@ export default function RewardsPage() {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amount: wAmt, payoutTo }),
+        body: JSON.stringify({ amount: wAmt, payoutTo, burnTx: transactionHash }),
       });
       if (res.ok) {
         setWNotice("Cash-out requested! Your ARENA was burned; an admin will send the cash and mark it paid.");

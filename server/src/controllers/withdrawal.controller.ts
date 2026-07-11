@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import WithdrawalModel from "../db/models/withdrawal.model.js";
 import { db } from "../db/index.js";
 import { isAdminUser } from "../util/admin.js";
-import { tokenBalanceOf, isTokenConfigured } from "../web3/arena.js";
+import { verifyArenaBurn, isTokenConfigured } from "../web3/arena.js";
 import { mintUsd, isUsdConfigured } from "../web3/usd.js";
 
 // $1 = 100 ARENA — keep in sync with the client's EXCHANGE_RATE (client/src/lib/contracts.ts).
@@ -23,15 +23,22 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
 
     const amount = Number(req.body.amount);
     if (!(amount > 0)) return res.status(400).json({ error: "amount must be greater than 0" });
+    const burnTx = typeof req.body.burnTx === "string" ? req.body.burnTx.trim() : "";
 
     const wallet = await walletOfUser(user.id);
 
-    // Can't cash out more than you actually hold on-chain.
-    if (isTokenConfigured() && wallet) {
-        const bal = await tokenBalanceOf(wallet);
-        if (bal !== null && amount > bal) {
-            return res.status(400).json({ error: `You only have ${bal} ARENA` });
+    // Confirm the ARENA was actually burned on-chain for this exact amount — do NOT
+    // re-read the balance here: it's already reduced by the burn, which wrongly
+    // rejected any cash-out over ~half the balance and destroyed the ARENA for nothing.
+    if (isTokenConfigured()) {
+        if (!wallet) return res.status(400).json({ error: "No wallet linked to your account." });
+        if (!burnTx) return res.status(400).json({ error: "Missing the burn transaction." });
+        const burned = await verifyArenaBurn(burnTx, wallet, amount);
+        if (!burned) {
+            return res.status(400).json({ error: "Couldn't verify the ARENA burn on-chain — nothing was cashed out." });
         }
+        const dup = await WithdrawalModel.findByBurnTx(burnTx);
+        if (dup) return res.status(409).json({ error: "This cash-out has already been processed." });
     }
 
     const usd = Number((amount * ARENA_TO_USD).toFixed(2));
@@ -43,7 +50,8 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
         usd,
         birr,
         wallet: wallet || undefined,
-        payoutTo: typeof req.body.payoutTo === "string" ? req.body.payoutTo.slice(0, 120) : undefined
+        payoutTo: typeof req.body.payoutTo === "string" ? req.body.payoutTo.slice(0, 120) : undefined,
+        burnTx: burnTx || undefined
     });
     if (!withdrawal) return res.status(500).json({ error: "Failed to create withdrawal" });
     return res.status(201).json({ withdrawal });

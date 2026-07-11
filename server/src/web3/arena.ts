@@ -13,7 +13,8 @@ import {
     formatUnits,
     getAddress,
     type Address,
-    type Hash
+    type Hash,
+    type TransactionReceipt
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
@@ -128,6 +129,54 @@ export async function tokenBalanceOf(addr: string): Promise<number | null> {
     } catch (err) {
         console.error(`[web3] balanceOf failed for ${addr}:`, (err as Error).message);
         return null;
+    }
+}
+
+// Transfer(address,address,uint256) signature + zero-address topic, for burn checks.
+const TRANSFER_SIG = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const ZERO_TOPIC = "0x" + "0".repeat(64);
+const padTopic = (addr: string) => ("0x" + "0".repeat(24) + addr.toLowerCase().replace(/^0x/, "")).toLowerCase();
+
+/**
+ * Verify an on-chain ARENA burn: the tx succeeded and carries a
+ * Transfer(from=wallet, to=0x0, value=amount) on the ARENA token. A cash-out uses
+ * this to confirm the tokens were really destroyed — instead of re-reading the
+ * balance, which is already reduced by the burn and wrongly rejected any cash-out
+ * over ~half the balance (burning the ARENA with no payout).
+ */
+export async function verifyArenaBurn(txHash: string, wallet: string, amount: number): Promise<boolean> {
+    if (!isTokenConfigured() || !isAddr(wallet) || !(amount > 0)) return false;
+    if (!/^0x[0-9a-fA-F]{64}$/.test(txHash || "")) return false;
+    try {
+        // Read the receipt directly, retrying a few times only for the rare case
+        // where the server's RPC hasn't indexed the just-mined burn yet — so a brief
+        // lag never falsely rejects a real burn and loses the player's ARENA.
+        let receipt: TransactionReceipt | undefined;
+        for (let i = 0; i < 5; i++) {
+            try {
+                receipt = await pub().getTransactionReceipt({ hash: txHash as Hash });
+                break;
+            } catch {
+                if (i === 4) return false;
+                await new Promise((r) => setTimeout(r, 2000));
+            }
+        }
+        if (!receipt || receipt.status !== "success") return false;
+        const want = parseUnits(String(amount), DECIMALS);
+        const token = getAddress(TOKEN).toLowerCase();
+        const from = padTopic(wallet);
+        for (const log of receipt.logs) {
+            if (log.address.toLowerCase() !== token) continue;
+            const t = log.topics;
+            if (t.length < 3 || (t[0] || "").toLowerCase() !== TRANSFER_SIG) continue;
+            if ((t[1] || "").toLowerCase() === from && (t[2] || "").toLowerCase() === ZERO_TOPIC && BigInt(log.data) === want) {
+                return true;
+            }
+        }
+        return false;
+    } catch (err) {
+        console.error(`[web3] verifyArenaBurn failed for ${txHash}:`, (err as Error).message);
+        return false;
     }
 }
 

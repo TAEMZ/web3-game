@@ -9,6 +9,7 @@ export interface Withdrawal {
     birr: string | null;
     wallet: string | null;
     payout_to: string | null;
+    burn_tx: string | null;
     status: "pending" | "paid" | "rejected";
     reviewed_by: string | null;
     reviewed_at: string | null;
@@ -23,18 +24,26 @@ export const create = async (w: {
     birr: number;
     wallet?: string;
     payoutTo?: string;
+    burnTx?: string;
 }): Promise<Withdrawal | null> => {
     try {
         const res = await db.query(
-            `INSERT INTO "withdrawal"(user_id, user_name, amount, usd, birr, wallet, payout_to, status)
-             VALUES($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`,
-            [w.userId, w.userName, w.amount, w.usd, w.birr, w.wallet || null, w.payoutTo || null]
+            `INSERT INTO "withdrawal"(user_id, user_name, amount, usd, birr, wallet, payout_to, burn_tx, status)
+             VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING *`,
+            [w.userId, w.userName, w.amount, w.usd, w.birr, w.wallet || null, w.payoutTo || null, w.burnTx || null]
         );
         return res.rows[0] as Withdrawal;
     } catch (err) {
         console.log("withdrawal.create", err);
         return null;
     }
+};
+
+// Look up a withdrawal by the burn tx that funded it — used to reject re-using the
+// same on-chain burn for more than one cash-out.
+export const findByBurnTx = async (burnTx: string): Promise<Withdrawal | null> => {
+    const res = await db.query(`SELECT * FROM "withdrawal" WHERE burn_tx=$1`, [burnTx]);
+    return res.rowCount ? (res.rows[0] as Withdrawal) : null;
 };
 
 export const findById = async (id: number): Promise<Withdrawal | null> => {
@@ -63,5 +72,5 @@ export const setStatus = async (
     );
 };
 
-const WithdrawalModel = { create, findById, listByUser, listByStatus, setStatus };
+const WithdrawalModel = { create, findById, findByBurnTx, listByUser, listByStatus, setStatus };
 export default WithdrawalModel;
