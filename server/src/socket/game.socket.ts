@@ -426,8 +426,10 @@ export async function joinAsPlayer(this: Socket) {
 }
 
 export async function chat(this: Socket, message: string) {
+    const u = this.request.session.user;
     this.to(Array.from(this.rooms)[1]).emit("chat", {
-        author: this.request.session.user,
+        // Only public fields — never broadcast email / wallet / admin flag to the room.
+        author: { id: u?.id, name: u?.name },
         message
     });
 }
