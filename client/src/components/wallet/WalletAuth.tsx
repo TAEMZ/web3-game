@@ -26,6 +26,10 @@ export default function WalletAuth() {
     // Admins don't use wallets. A stale wallet auto-reconnecting from a previous
     // player must never bridge into (and hijack/merge) an admin session.
     if (user?.is_admin) return;
+    // A guest deliberately chose guest mode (string id). A wallet still connected
+    // from a previous player must never hijack the guest session and sign them back
+    // in as that player — leave the guest as a guest until they explicitly sign in.
+    if (typeof user?.id === "string") return;
     const address = account.address.toLowerCase();
     if (user?.walletAddress === address) return;
     if (busy.current) return;
