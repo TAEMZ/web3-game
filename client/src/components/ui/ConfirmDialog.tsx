@@ -36,15 +36,15 @@ export default function ConfirmDialog({
     >
       <div
         className="glass-dark w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-6"
-        style={{ border: "1px solid rgba(201,162,39,0.3)" }}
+        style={{ border: "1px solid rgb(var(--rgb-gold) / 0.3)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-display mb-2 text-lg font-bold text-[#E8C040]">{title}</h3>
-        <div className="mb-5 text-sm text-[rgba(216,204,176,0.75)]">{message}</div>
+        <h3 className="font-display mb-2 text-lg font-bold text-[var(--c-gold-strong)]">{title}</h3>
+        <div className="mb-5 text-sm text-[rgb(var(--rgb-text)_/_0.75)]">{message}</div>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="rounded-full border border-[rgba(201,162,39,0.3)] px-4 py-1.5 text-sm font-semibold text-[#d8ccb0] transition hover:bg-[rgba(201,162,39,0.12)]"
+            className="rounded-full border border-[rgb(var(--rgb-gold)_/_0.3)] px-4 py-1.5 text-sm font-semibold text-[var(--c-text)] transition hover:bg-[rgb(var(--rgb-gold)_/_0.12)]"
           >
             {cancelLabel}
           </button>
@@ -52,7 +52,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             className={
               danger
-                ? "rounded-full bg-[rgba(184,24,24,0.85)] px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-[rgba(184,24,24,1)]"
+                ? "rounded-full bg-[rgb(var(--rgb-red)_/_0.85)] px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-[rgb(var(--rgb-red)_/_1)]"
                 : "btn-gold px-4 py-1.5 text-sm"
             }
           >

@@ -279,7 +279,7 @@ export default function RewardsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-[#E8C040]">Loading…</div>
+        <div className="text-[var(--c-gold-strong)]">Loading…</div>
       </div>
     );
   }
@@ -289,21 +289,21 @@ export default function RewardsPage() {
     <main className="mx-auto w-full max-w-4xl px-4 py-8">
       <div className="mb-8 text-center">
         <h1 className="font-display mb-2 text-4xl font-bold gold-text-shimmer md:text-5xl">Your Wallet</h1>
-        <p className="text-[rgba(216,204,176,0.6)]">Your ARENA balance, conversions, and achievements</p>
+        <p className="text-[rgb(var(--rgb-text)_/_0.6)]">Your ARENA balance, conversions, and achievements</p>
       </div>
 
       {/* Balance hero */}
-      <div className="glass-dark relative mb-6 overflow-hidden rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
+      <div className="glass-dark relative mb-6 overflow-hidden rounded-2xl border border-[rgb(var(--rgb-gold)_/_0.3)] p-6">
         <div className="tricolor-bar absolute inset-x-0 top-0" />
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display flex items-center gap-2 text-xl font-bold text-[#E8C040]">
+          <h2 className="font-display flex items-center gap-2 text-xl font-bold text-[var(--c-gold-strong)]">
             <IconCoins size={20} /> ARENA Balance
           </h2>
           <span
             className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${
               showOnChain || rewards?.onChain
-                ? "bg-[rgba(95,184,132,0.15)] text-[#5fb884]"
-                : "bg-[rgba(216,204,176,0.1)] text-[rgba(216,204,176,0.5)]"
+                ? "bg-[rgb(var(--rgb-green)_/_0.15)] text-[var(--c-green-text)]"
+                : "bg-[rgb(var(--rgb-text)_/_0.1)] text-[rgb(var(--rgb-text)_/_0.5)]"
             }`}
           >
             {showOnChain || rewards?.onChain ? "● On-chain · Sepolia" : "Off-chain estimate"}
@@ -311,11 +311,13 @@ export default function RewardsPage() {
         </div>
 
         <div className="py-4 text-center">
-          <div className="mb-1 text-6xl font-bold gold-text-shimmer tabular-nums">{balance.toLocaleString()}</div>
-          <p className="text-sm text-[rgba(216,204,176,0.6)]">ARENA tokens</p>
+          <div className="gold-text-shimmer mb-1 break-all text-4xl font-bold tabular-nums sm:text-6xl">
+            {balance.toLocaleString()}
+          </div>
+          <p className="text-sm text-[rgb(var(--rgb-text)_/_0.6)]">ARENA tokens</p>
           {rate && (
-            <p className="mt-2 text-sm text-[#d8ccb0]">
-              ≈ <span className="font-semibold text-[#E8C040] tabular-nums">${displayUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> USD
+            <p className="mt-2 text-sm text-[var(--c-text)]">
+              ≈ <span className="font-semibold text-[var(--c-gold-strong)] tabular-nums">${displayUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> USD
             </p>
           )}
           {(rewards?.penalty || 0) > 0 && (
@@ -327,41 +329,41 @@ export default function RewardsPage() {
         </div>
 
         {/* wallet line + live spendable USDC (read from the connected wallet) */}
-        <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-[rgba(201,162,39,0.15)] pt-4 text-xs">
+        <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-[rgb(var(--rgb-gold)_/_0.15)] pt-4 text-xs">
           <div className="flex items-center gap-2">
-            <IconWallet size={15} className="text-[rgba(216,204,176,0.5)]" />
+            <IconWallet size={15} className="text-[rgb(var(--rgb-text)_/_0.5)]" />
             {rewards?.walletLinked ? (
-              <span className="font-mono text-[rgba(216,204,176,0.6)]">
+              <span className="font-mono text-[rgb(var(--rgb-text)_/_0.6)]">
                 {rewards.wallet?.slice(0, 6)}…{rewards.wallet?.slice(-4)}
               </span>
             ) : (
-              <span className="text-[rgba(216,204,176,0.5)]">
+              <span className="text-[rgb(var(--rgb-text)_/_0.5)]">
                 No wallet linked — connect one in the account menu to hold tokens
               </span>
             )}
           </div>
           {showOnChain && walletUsd !== null && (
-            <span className="text-[rgba(216,204,176,0.55)]">
+            <span className="text-[rgb(var(--rgb-text)_/_0.55)]">
               Spendable balance:{" "}
-              <span className="font-semibold text-[#5fb884] tabular-nums">${walletUsd.toFixed(2)}</span> test USDC
+              <span className="font-semibold text-[var(--c-green-text)] tabular-nums">${walletUsd.toFixed(2)}</span> test USDC
             </span>
           )}
         </div>
       </div>
 
       {/* Admin-verified top-up request — the only way to buy ARENA */}
-      <div className="glass-dark mb-6 rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
-        <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[#E8C040]">
+      <div className="glass-dark mb-6 rounded-2xl border border-[rgb(var(--rgb-gold)_/_0.3)] p-6">
+        <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[var(--c-gold-strong)]">
           <IconArrowUpRight size={20} /> Buy ARENA
         </h2>
-        <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
+        <p className="mb-4 text-sm text-[rgb(var(--rgb-text)_/_0.55)]">
           Pay in test USDC and{" "}
-          <span className="text-[#E8C040]">an admin verifies your payment and releases the ARENA</span> to your wallet.{" "}
-          <span className="text-[rgba(216,204,176,0.4)]">Testnet play-money — not real cash.</span>
+          <span className="text-[var(--c-gold-strong)]">an admin verifies your payment and releases the ARENA</span> to your wallet.{" "}
+          <span className="text-[rgb(var(--rgb-text)_/_0.4)]">Testnet play-money — not real cash.</span>
         </p>
 
         <form onSubmit={submitTopUp} className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
+          <label className="flex flex-col gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
             Amount (ARENA)
             <input
               type="number"
@@ -369,35 +371,35 @@ export default function RewardsPage() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="e.g. 500"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2 text-sm text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
+          <label className="flex flex-col gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
             Note (optional)
             <input
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="demo — any note for the admin"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2 text-sm text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
+          <label className="flex flex-col gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
             Wallet to receive (0x…)
             <input
               value={wallet}
               onChange={(e) => setWallet(e.target.value)}
               placeholder="0x…"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 font-mono text-xs text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2 font-mono text-xs text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
           </label>
 
           <div className="sm:col-span-2">
             {amt > 0 && (
-              <p className="mb-3 text-xs text-[rgba(216,204,176,0.6)]">
-                {amt} ARENA — you pay <span className="font-semibold text-[#E8C040]">${usdcCost.toFixed(2)}</span> in test USDC
+              <p className="mb-3 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
+                {amt} ARENA — you pay <span className="font-semibold text-[var(--c-gold-strong)]">${usdcCost.toFixed(2)}</span> in test USDC
               </p>
             )}
-            {notice && <p className="mb-3 text-xs text-[#5fb884]">{notice}</p>}
+            {notice && <p className="mb-3 text-xs text-[var(--c-green-text)]">{notice}</p>}
             <button type="submit" disabled={submitting} className="btn-gold w-full sm:w-auto">
               {submitting ? "Working…" : amt > 0 ? `Pay $${usdcCost.toFixed(2)} in USDC` : "Buy ARENA"}
             </button>
@@ -405,14 +407,14 @@ export default function RewardsPage() {
         </form>
 
         {deposits.length > 0 && (
-          <div className="mt-5 border-t border-[rgba(201,162,39,0.15)] pt-4">
-            <p className="mb-2 text-xs uppercase tracking-wide text-[rgba(216,204,176,0.4)]">Your requests</p>
+          <div className="mt-5 border-t border-[rgb(var(--rgb-gold)_/_0.15)] pt-4">
+            <p className="mb-2 text-xs uppercase tracking-wide text-[rgb(var(--rgb-text)_/_0.4)]">Your requests</p>
             <ul className="flex flex-col gap-1.5">
               {deposits.slice(0, 6).map((d) => (
-                <li key={d.id} className="flex items-center justify-between rounded-lg bg-[rgba(0,0,0,0.25)] px-3 py-2 text-sm">
-                  <span className="text-[#d8ccb0] tabular-nums">
+                <li key={d.id} className="flex items-center justify-between rounded-lg bg-[var(--c-well-25)] px-3 py-2 text-sm">
+                  <span className="text-[var(--c-text)] tabular-nums">
                     {Number(d.amount)} ARENA
-                    <span className="ml-2 text-xs text-[rgba(216,204,176,0.4)]">{d.method}</span>
+                    <span className="ml-2 text-xs text-[rgb(var(--rgb-text)_/_0.4)]">{d.method}</span>
                   </span>
                   <span className="flex items-center gap-2">
                     {d.mint_tx && (
@@ -420,7 +422,7 @@ export default function RewardsPage() {
                         href={`https://sepolia.etherscan.io/tx/${d.mint_tx}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-[rgba(216,204,176,0.5)] underline hover:text-[#E8C040]"
+                        className="text-xs text-[rgb(var(--rgb-text)_/_0.5)] underline hover:text-[var(--c-gold-strong)]"
                       >
                         tx
                       </a>
@@ -435,16 +437,16 @@ export default function RewardsPage() {
       </div>
 
       {/* Withdraw / cash-out */}
-      <div className="glass-dark mb-6 rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
-        <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[#E8C040]">
+      <div className="glass-dark mb-6 rounded-2xl border border-[rgb(var(--rgb-gold)_/_0.3)] p-6">
+        <h2 className="font-display mb-1 flex items-center gap-2 text-xl font-bold text-[var(--c-gold-strong)]">
           <IconArrowDownLeft size={20} /> Cash out
         </h2>
-        <p className="mb-4 text-sm text-[rgba(216,204,176,0.55)]">
-          Convert your ARENA back to cash. <span className="text-[#E8C040]">Demo only</span> — your ARENA is burned and an admin marks it paid.
+        <p className="mb-4 text-sm text-[rgb(var(--rgb-text)_/_0.55)]">
+          Convert your ARENA back to cash. <span className="text-[var(--c-gold-strong)]">Demo only</span> — your ARENA is burned and an admin marks it paid.
         </p>
 
         <form onSubmit={submitWithdraw} className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
+          <label className="flex flex-col gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
             Amount to cash out (ARENA)
             <input
               type="number"
@@ -453,27 +455,27 @@ export default function RewardsPage() {
               value={wAmount}
               onChange={(e) => setWAmount(e.target.value)}
               placeholder={`up to ${balance}`}
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2 text-sm text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-[rgba(216,204,176,0.6)]">
+          <label className="flex flex-col gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]">
             Payout note (demo)
             <input
               value={payoutTo}
               onChange={(e) => setPayoutTo(e.target.value)}
               placeholder="demo — where you'd want the cash"
-              className="rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2 text-sm text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
           </label>
           <div className="sm:col-span-2">
             {/* live conversion preview — burn X ARENA → receive $Y */}
-            <div className="mb-3 rounded-lg border border-[rgba(201,162,39,0.15)] bg-[rgba(0,0,0,0.2)] px-4 py-3 text-center">
-              <span className="text-sm text-[rgba(216,204,176,0.6)]">Burn </span>
-              <span className="font-bold text-[#E8C040] tabular-nums">{wAmt || 0} ARENA</span>
-              <span className="mx-2 text-[rgba(216,204,176,0.35)]">→ receive</span>
-              <span className="text-lg font-bold text-[#5fb884] tabular-nums">${Number(wUsd).toLocaleString()}</span>
+            <div className="mb-3 rounded-lg border border-[rgb(var(--rgb-gold)_/_0.15)] bg-[var(--c-well-20)] px-4 py-3 text-center">
+              <span className="text-sm text-[rgb(var(--rgb-text)_/_0.6)]">Burn </span>
+              <span className="font-bold text-[var(--c-gold-strong)] tabular-nums">{wAmt || 0} ARENA</span>
+              <span className="mx-2 text-[rgb(var(--rgb-text)_/_0.35)]">→ receive</span>
+              <span className="text-lg font-bold text-[var(--c-green-text)] tabular-nums">${Number(wUsd).toLocaleString()}</span>
             </div>
-            {wNotice && <p className="mb-3 text-xs text-[#5fb884]">{wNotice}</p>}
+            {wNotice && <p className="mb-3 text-xs text-[var(--c-green-text)]">{wNotice}</p>}
             <button
               type="submit"
               disabled={wSubmitting || balance <= 0}
@@ -485,14 +487,14 @@ export default function RewardsPage() {
         </form>
 
         {withdrawals.length > 0 && (
-          <div className="mt-5 border-t border-[rgba(201,162,39,0.15)] pt-4">
-            <p className="mb-2 text-xs uppercase tracking-wide text-[rgba(216,204,176,0.4)]">Your cash-outs</p>
+          <div className="mt-5 border-t border-[rgb(var(--rgb-gold)_/_0.15)] pt-4">
+            <p className="mb-2 text-xs uppercase tracking-wide text-[rgb(var(--rgb-text)_/_0.4)]">Your cash-outs</p>
             <ul className="flex flex-col gap-1.5">
               {withdrawals.slice(0, 6).map((w) => (
-                <li key={w.id} className="flex items-center justify-between rounded-lg bg-[rgba(0,0,0,0.25)] px-3 py-2 text-sm">
-                  <span className="text-[#d8ccb0] tabular-nums">
+                <li key={w.id} className="flex items-center justify-between rounded-lg bg-[var(--c-well-25)] px-3 py-2 text-sm">
+                  <span className="text-[var(--c-text)] tabular-nums">
                     {Number(w.amount)} ARENA
-                    <span className="ml-2 text-xs text-[rgba(216,204,176,0.45)]">
+                    <span className="ml-2 text-xs text-[rgb(var(--rgb-text)_/_0.45)]">
                       → ${Number(w.usd).toLocaleString()}
                     </span>
                   </span>
@@ -505,18 +507,18 @@ export default function RewardsPage() {
       </div>
 
       {/* Achievements */}
-      <div className="glass-dark rounded-2xl border border-[rgba(201,162,39,0.3)] p-6">
+      <div className="glass-dark rounded-2xl border border-[rgb(var(--rgb-gold)_/_0.3)] p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display flex items-center gap-2 text-xl font-bold text-[#E8C040]">
+          <h2 className="font-display flex items-center gap-2 text-xl font-bold text-[var(--c-gold-strong)]">
             <IconTrophy size={20} /> Achievement Badges
           </h2>
-          <span className="text-xs text-[rgba(216,204,176,0.4)]">NFT · Sepolia</span>
+          <span className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]">NFT · Sepolia</span>
         </div>
         <ul className="flex flex-col gap-2">
           {[
             { Icon: IconMedal, name: "First Victory", desc: "Win your first game", idx: 0, color: "#cd8b52" },
             { Icon: IconMedal2, name: "Silver Champion", desc: "Win 10 games", idx: 1, color: "#c8c8d0" },
-            { Icon: IconTrophy, name: "Gold Champion", desc: "Win 100 games", idx: 2, color: "#E8C040" },
+            { Icon: IconTrophy, name: "Gold Champion", desc: "Win 100 games", idx: 2, color: "var(--c-gold-strong)" },
             { Icon: IconStar, name: "Perfect Week", desc: "Win 7 in a row", idx: 3, color: "#a78bfa", soon: true },
           ].map((a) => {
             const earned = !!rewards?.badges?.[a.idx];
@@ -525,8 +527,8 @@ export default function RewardsPage() {
                 key={a.name}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                 style={{
-                  background: earned ? "rgba(201,162,39,0.08)" : "rgba(13,22,18,0.5)",
-                  border: `1px solid ${earned ? "rgba(201,162,39,0.3)" : "rgba(201,162,39,0.1)"}`,
+                  background: earned ? "rgb(var(--rgb-gold) / 0.08)" : "rgb(var(--rgb-surface) / 0.5)",
+                  border: `1px solid ${earned ? "rgb(var(--rgb-gold) / 0.3)" : "rgb(var(--rgb-gold) / 0.1)"}`,
                   opacity: a.soon && !earned ? 0.55 : 1,
                 }}
               >
@@ -534,22 +536,22 @@ export default function RewardsPage() {
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
                   style={{
                     background: earned ? `${a.color}22` : "rgba(0,0,0,0.3)",
-                    color: earned ? a.color : "rgba(216,204,176,0.35)",
-                    border: `1px solid ${earned ? a.color + "66" : "rgba(201,162,39,0.15)"}`,
+                    color: earned ? a.color : "rgb(var(--rgb-text) / 0.35)",
+                    border: `1px solid ${earned ? a.color + "66" : "rgb(var(--rgb-gold) / 0.15)"}`,
                   }}
                 >
                   <a.Icon size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[#d8ccb0]">{a.name}</span>
+                    <span className="text-sm font-semibold text-[var(--c-text)]">{a.name}</span>
                     {earned && (
-                      <span className="rounded-full bg-[rgba(95,184,132,0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#5fb884]">
+                      <span className="rounded-full bg-[rgb(var(--rgb-green)_/_0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[var(--c-green-text)]">
                         Owned
                       </span>
                     )}
                   </div>
-                  <p className="truncate text-xs text-[rgba(216,204,176,0.45)]">{a.desc}</p>
+                  <p className="truncate text-xs text-[rgb(var(--rgb-text)_/_0.45)]">{a.desc}</p>
                 </div>
                 <div className="shrink-0 text-right">
                   {earned ? (
@@ -557,14 +559,14 @@ export default function RewardsPage() {
                       href={`https://sepolia.etherscan.io/token/${ARENA_NFT_ADDRESS}?a=${rewards?.wallet ?? ""}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs font-semibold text-[#E8C040] underline-offset-2 hover:underline"
+                      className="text-xs font-semibold text-[var(--c-gold-strong)] underline-offset-2 hover:underline"
                     >
                       View NFT ↗
                     </a>
                   ) : a.soon ? (
-                    <span className="text-[0.65rem] uppercase tracking-wide text-[rgba(216,204,176,0.35)]">Soon</span>
+                    <span className="text-[0.65rem] uppercase tracking-wide text-[rgb(var(--rgb-text)_/_0.35)]">Soon</span>
                   ) : (
-                    <span className="text-[0.65rem] uppercase tracking-wide text-[rgba(216,204,176,0.35)]">Locked</span>
+                    <span className="text-[0.65rem] uppercase tracking-wide text-[rgb(var(--rgb-text)_/_0.35)]">Locked</span>
                   )}
                 </div>
               </li>
@@ -579,9 +581,9 @@ export default function RewardsPage() {
 
 function StatusPill({ status }: { status: "pending" | "approved" | "rejected" }) {
   const map = {
-    pending: { t: "Pending", c: "#e0b34d", b: "rgba(224,179,77,0.15)" },
-    approved: { t: "Released", c: "#5fb884", b: "rgba(95,184,132,0.15)" },
-    rejected: { t: "Rejected", c: "#e06666", b: "rgba(224,102,102,0.15)" },
+    pending: { t: "Pending", c: "var(--c-gold)", b: "rgb(var(--rgb-gold) / 0.15)" },
+    approved: { t: "Released", c: "var(--c-green-text)", b: "rgb(var(--rgb-green) / 0.15)" },
+    rejected: { t: "Rejected", c: "var(--c-red-text)", b: "rgb(var(--rgb-red-soft) / 0.15)" },
   }[status];
   return (
     <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide" style={{ color: map.c, background: map.b }}>
@@ -592,9 +594,9 @@ function StatusPill({ status }: { status: "pending" | "approved" | "rejected" })
 
 function WStatusPill({ status }: { status: "pending" | "paid" | "rejected" }) {
   const map = {
-    pending: { t: "Pending", c: "#e0b34d", b: "rgba(224,179,77,0.15)" },
-    paid: { t: "Paid", c: "#5fb884", b: "rgba(95,184,132,0.15)" },
-    rejected: { t: "Rejected", c: "#e06666", b: "rgba(224,102,102,0.15)" },
+    pending: { t: "Pending", c: "var(--c-gold)", b: "rgb(var(--rgb-gold) / 0.15)" },
+    paid: { t: "Paid", c: "var(--c-green-text)", b: "rgb(var(--rgb-green) / 0.15)" },
+    rejected: { t: "Rejected", c: "var(--c-red-text)", b: "rgb(var(--rgb-red-soft) / 0.15)" },
   }[status];
   return (
     <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide" style={{ color: map.c, background: map.b }}>

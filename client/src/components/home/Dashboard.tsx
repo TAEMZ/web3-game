@@ -79,10 +79,10 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
   const winRate = played ? Math.round((stats!.wins / played) * 100) : 0;
 
   const statTiles = [
-    { label: "Wins", value: stats?.wins, color: "#5fb884" },
-    { label: "Losses", value: stats?.losses, color: "#e06666" },
-    { label: "Draws", value: stats?.draws, color: "#E8C040" },
-    { label: "Win rate", value: stats ? `${winRate}%` : undefined, color: "#d8ccb0" },
+    { label: "Wins", value: stats?.wins, color: "var(--c-green-text)" },
+    { label: "Losses", value: stats?.losses, color: "var(--c-red-text)" },
+    { label: "Draws", value: stats?.draws, color: "var(--c-gold-strong)" },
+    { label: "Win rate", value: stats ? `${winRate}%` : undefined, color: "var(--c-text)" },
   ];
 
   return (
@@ -91,7 +91,7 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
         {/* ── Identity + balance ── */}
         <section
           className="glass-dark relative overflow-hidden rounded-3xl p-6 md:p-7"
-          style={{ border: "1px solid rgba(201,162,39,0.22)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.22)" }}
         >
           <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -99,23 +99,23 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
               <div
                 className="font-display grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-black text-[#0d1612]"
                 style={{
-                  background: "linear-gradient(135deg,#e8c040,#c9a227 55%,#9a7a18)",
-                  boxShadow: "0 6px 22px rgba(201,162,39,0.35)",
+                  background: "linear-gradient(135deg,var(--c-gold-strong),var(--c-gold) 55%,var(--c-gold-deep))",
+                  boxShadow: "0 6px 22px rgb(var(--rgb-gold) / 0.35)",
                 }}
               >
                 {initial}
               </div>
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.15em] text-[rgba(216,204,176,0.45)]">Welcome back</p>
-                <h1 className="font-display truncate text-2xl font-black text-[#d8ccb0] md:text-3xl">{name}</h1>
+                <p className="text-xs uppercase tracking-[0.15em] text-[rgb(var(--rgb-text)_/_0.45)]">Welcome back</p>
+                <h1 className="font-display truncate text-2xl font-black text-[var(--c-text)] md:text-3xl">{name}</h1>
                 <span
                   className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                   style={{
-                    background: hasWallet ? "rgba(26,107,63,0.18)" : "rgba(201,162,39,0.12)",
-                    color: hasWallet ? "#5fb884" : "#E8C040",
+                    background: hasWallet ? "rgb(var(--rgb-green-deep) / 0.18)" : "rgb(var(--rgb-gold) / 0.12)",
+                    color: hasWallet ? "var(--c-green-text)" : "var(--c-gold-strong)",
                   }}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: hasWallet ? "#5fb884" : "#E8C040" }} />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: hasWallet ? "var(--c-green-text)" : "var(--c-gold-strong)" }} />
                   {hasWallet ? "Wallet connected" : "Connect a wallet in the menu"}
                 </span>
               </div>
@@ -123,12 +123,12 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
 
             <div
               className="flex items-center justify-between gap-4 rounded-2xl px-5 py-3 sm:flex-col sm:items-end sm:justify-center sm:text-right"
-              style={{ background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.2)" }}
+              style={{ background: "rgb(var(--rgb-gold) / 0.08)", border: "1px solid rgb(var(--rgb-gold) / 0.2)" }}
             >
-              <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.5)] sm:order-2">
+              <p className="text-[0.7rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.5)] sm:order-2">
                 ARENA balance
               </p>
-              <p className="font-display text-3xl font-black text-[#E8C040] sm:order-1">
+              <p className="font-display text-3xl font-black text-[var(--c-gold-strong)] sm:order-1">
                 {stats ? stats.totalTokens.toLocaleString() : "—"}
               </p>
             </div>
@@ -140,34 +140,34 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
           <button
             onClick={quickPlay}
             disabled={quickLoading}
-            className="group glass-dark flex items-center gap-4 rounded-2xl p-5 text-left transition hover:border-[rgba(201,162,39,0.5)] disabled:opacity-60"
-            style={{ border: "1px solid rgba(201,162,39,0.2)" }}
+            className="group glass-dark flex items-center gap-4 rounded-2xl p-5 text-left transition hover:border-[rgb(var(--rgb-gold)_/_0.5)] disabled:opacity-60"
+            style={{ border: "1px solid rgb(var(--rgb-gold) / 0.2)" }}
           >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgba(201,162,39,0.14)] text-[#E8C040]">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgb(var(--rgb-gold)_/_0.14)] text-[var(--c-gold-strong)]">
               <IconBolt size={24} />
             </span>
             <div className="flex-1">
-              <p className="font-display text-lg font-bold text-[#d8ccb0]">
+              <p className="font-display text-lg font-bold text-[var(--c-text)]">
                 {quickLoading ? "Starting…" : "Quick Play"}
               </p>
-              <p className="text-xs text-[rgba(216,204,176,0.5)]">Instant game vs the computer</p>
+              <p className="text-xs text-[rgb(var(--rgb-text)_/_0.5)]">Instant game vs the computer</p>
             </div>
-            <IconChevronRight size={18} className="text-[rgba(216,204,176,0.3)] transition group-hover:text-[#E8C040]" />
+            <IconChevronRight size={18} className="text-[rgb(var(--rgb-text)_/_0.3)] transition group-hover:text-[var(--c-gold-strong)]" />
           </button>
 
           <button
             onClick={() => router.push("/play")}
             className="group relative flex items-center gap-4 overflow-hidden rounded-2xl p-5 text-left transition"
-            style={{ border: "1px solid rgba(201,162,39,0.5)", background: "rgba(201,162,39,0.06)", boxShadow: "0 6px 24px rgba(201,162,39,0.1)" }}
+            style={{ border: "1px solid rgb(var(--rgb-gold) / 0.5)", background: "rgb(var(--rgb-gold) / 0.06)", boxShadow: "0 6px 24px rgb(var(--rgb-gold) / 0.1)" }}
           >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgba(201,162,39,0.2)] text-[#E8C040]">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[rgb(var(--rgb-gold)_/_0.2)] text-[var(--c-gold-strong)]">
               <IconTrophy size={24} />
             </span>
             <div className="flex-1">
-              <p className="font-display text-lg font-bold text-[#E8C040]">Wager Arena</p>
-              <p className="text-xs text-[rgba(216,204,176,0.6)]">Stake ARENA — winner takes the pot</p>
+              <p className="font-display text-lg font-bold text-[var(--c-gold-strong)]">Wager Arena</p>
+              <p className="text-xs text-[rgb(var(--rgb-text)_/_0.6)]">Stake ARENA — winner takes the pot</p>
             </div>
-            <IconChevronRight size={18} className="text-[#E8C040] transition group-hover:translate-x-0.5" />
+            <IconChevronRight size={18} className="text-[var(--c-gold-strong)] transition group-hover:translate-x-0.5" />
           </button>
         </div>
 
@@ -177,34 +177,34 @@ export default function Dashboard({ publicGames }: { publicGames: ReactNode }) {
             <div
               key={t.label}
               className="glass-dark rounded-xl px-4 py-3 text-center"
-              style={{ border: "1px solid rgba(201,162,39,0.12)" }}
+              style={{ border: "1px solid rgb(var(--rgb-gold) / 0.12)" }}
             >
               <p className="font-display text-2xl font-bold tabular-nums" style={{ color: t.color }}>
                 {t.value ?? "—"}
               </p>
-              <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
+              <p className="text-[0.7rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">{t.label}</p>
             </div>
           ))}
         </div>
 
         {/* ── Custom game / join / live ── */}
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
-          <div className="glass-dark flex flex-col gap-5 rounded-2xl p-6" style={{ border: "1px solid rgba(201,162,39,0.18)" }}>
+          <div className="glass-dark flex flex-col gap-5 rounded-2xl p-6" style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}>
             <div>
-              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[var(--c-gold-strong)]">
                 <IconChess size={20} /> Custom game
               </h2>
-              <p className="text-xs text-[rgba(216,204,176,0.45)]">Play the computer or open a room for a friend.</p>
+              <p className="text-xs text-[rgb(var(--rgb-text)_/_0.45)]">Play the computer or open a room for a friend.</p>
             </div>
             <CreateGame />
 
-            <div className="h-px bg-[rgba(216,204,176,0.1)]" />
+            <div className="h-px bg-[rgb(var(--rgb-text)_/_0.1)]" />
 
             <div>
-              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[var(--c-gold-strong)]">
                 <IconLink size={18} /> Join a game
               </h2>
-              <p className="text-xs text-[rgba(216,204,176,0.45)]">Paste an invite link or code.</p>
+              <p className="text-xs text-[rgb(var(--rgb-text)_/_0.45)]">Paste an invite link or code.</p>
             </div>
             <JoinGame />
           </div>

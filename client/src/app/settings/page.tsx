@@ -70,8 +70,8 @@ export default function Settings() {
       <div className="mx-auto max-w-2xl space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-display text-3xl font-bold text-[#E8C040]">Settings</h1>
-          <p className="mt-1 text-sm text-[rgba(216,204,176,0.5)]">
+          <h1 className="font-display text-3xl font-bold text-[var(--c-gold-strong)]">Settings</h1>
+          <p className="mt-1 text-sm text-[rgb(var(--rgb-text)_/_0.5)]">
             Manage your account and Web3 features
           </p>
         </div>
@@ -79,21 +79,21 @@ export default function Settings() {
         {/* Web3 Section */}
         <div
           className="glass-dark rounded-2xl p-6"
-          style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}
         >
-          <h2 className="font-display text-xl font-bold text-[#E8C040] mb-4">Web3 Features</h2>
+          <h2 className="font-display text-xl font-bold text-[var(--c-gold-strong)] mb-4">Web3 Features</h2>
 
           <div className="space-y-4">
-            <div className="flex items-start gap-3 rounded-xl bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.2)] p-4">
+            <div className="flex items-start gap-3 rounded-xl bg-[rgb(var(--rgb-gold)_/_0.08)] border border-[rgb(var(--rgb-gold)_/_0.2)] p-4">
               <div className="text-2xl">🛡️</div>
               <div className="flex-1">
-                <p className="font-semibold text-[#E8C040]">Wallet managed for you</p>
-                <p className="text-xs text-[rgba(216,204,176,0.6)] mt-1">
+                <p className="font-semibold text-[var(--c-gold-strong)]">Wallet managed for you</p>
+                <p className="text-xs text-[rgb(var(--rgb-text)_/_0.6)] mt-1">
                   The platform holds a wallet for you automatically — no setup, no gas fees, nothing to
                   connect. Your ARENA balance, rewards, and wagers all settle on-chain through it.
                 </p>
                 {hasWallet && (
-                  <p className="text-xs text-[rgba(216,204,176,0.5)] mt-2 font-mono break-all">
+                  <p className="text-xs text-[rgb(var(--rgb-text)_/_0.5)] mt-2 font-mono break-all">
                     {user.walletAddress}
                   </p>
                 )}
@@ -106,9 +106,9 @@ export default function Settings() {
         {!isGuest && (
           <div
             className="glass-dark rounded-2xl p-6"
-            style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+            style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}
           >
-            <h2 className="font-display text-xl font-bold text-[#E8C040] mb-4">
+            <h2 className="font-display text-xl font-bold text-[var(--c-gold-strong)] mb-4">
               Account Settings
             </h2>
 
@@ -144,7 +144,7 @@ export default function Settings() {
                   defaultValue={user.email}
                   minLength={4}
                 />
-                <p className="mt-1 text-xs text-[rgba(216,204,176,0.4)]">
+                <p className="mt-1 text-xs text-[rgb(var(--rgb-text)_/_0.4)]">
                   For account recovery
                 </p>
               </div>
@@ -168,8 +168,8 @@ export default function Settings() {
                   className={
                     "rounded-xl px-4 py-3 text-sm " +
                     (serverMessage.includes("successful")
-                      ? "bg-[rgba(26,107,63,0.15)] border border-[rgba(26,107,63,0.3)] text-[#5fc88f]"
-                      : "bg-[rgba(184,24,24,0.15)] border border-[rgba(184,24,24,0.4)] text-[#e85050]")
+                      ? "bg-[rgb(var(--rgb-green-deep)_/_0.15)] border border-[rgb(var(--rgb-green-deep)_/_0.3)] text-[var(--c-green-text)]"
+                      : "bg-[rgb(var(--rgb-red)_/_0.15)] border border-[rgb(var(--rgb-red)_/_0.4)] text-[var(--c-red-text)]")
                   }
                 >
                   {serverMessage}
@@ -187,16 +187,16 @@ export default function Settings() {
         {isGuest && (
           <div
             className="glass-dark rounded-2xl p-6"
-            style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+            style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}
           >
             <div className="flex items-start gap-3">
               <div className="text-3xl">👻</div>
               <div>
-                <h3 className="font-semibold text-[#E8C040] mb-2">Playing as Guest</h3>
-                <p className="text-sm text-[rgba(216,204,176,0.6)] mb-3">
+                <h3 className="font-semibold text-[var(--c-gold-strong)] mb-2">Playing as Guest</h3>
+                <p className="text-sm text-[rgb(var(--rgb-text)_/_0.6)] mb-3">
                   You&apos;re in guest mode. Your stats won&apos;t be saved when you close the browser.
                 </p>
-                <p className="text-xs text-[rgba(216,204,176,0.5)]">
+                <p className="text-xs text-[rgb(var(--rgb-text)_/_0.5)]">
                   Create a permanent account to save your progress and unlock all features.
                 </p>
               </div>

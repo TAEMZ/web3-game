@@ -120,7 +120,7 @@ export default function ExchangeModal({
     >
       <div
         className="glass-dark animate-fade-in-up relative w-full max-w-md overflow-hidden rounded-3xl p-6"
-        style={{ border: "1px solid rgba(201,162,39,0.28)" }}
+        style={{ border: "1px solid rgb(var(--rgb-gold) / 0.28)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
@@ -128,56 +128,56 @@ export default function ExchangeModal({
         <button
           onClick={onClose}
           disabled={busy}
-          className="absolute right-4 top-4 text-[rgba(216,204,176,0.5)] transition hover:text-[#E8C040] disabled:opacity-30"
+          className="absolute right-4 top-4 text-[rgb(var(--rgb-text)_/_0.5)] transition hover:text-[var(--c-gold-strong)] disabled:opacity-30"
           aria-label="Close"
         >
           <IconX size={20} />
         </button>
 
-        <h2 className="font-display flex items-center gap-2 text-xl font-black text-[#E8C040]">
+        <h2 className="font-display flex items-center gap-2 text-xl font-black text-[var(--c-gold-strong)]">
           <IconCoins size={22} /> Get ARENA
         </h2>
-        <p className="mt-1 text-xs text-[rgba(216,204,176,0.55)]">
+        <p className="mt-1 text-xs text-[rgb(var(--rgb-text)_/_0.55)]">
           Swap your demo USDC for ARENA — {EXCHANGE_RATE} ARENA per 1 USDC. It&apos;s all testnet play-money.
         </p>
 
         {reason && (
-          <p className="mt-3 rounded-lg bg-[rgba(201,162,39,0.1)] px-3 py-2 text-xs text-[#E8C040]">
+          <p className="mt-3 rounded-lg bg-[rgb(var(--rgb-gold)_/_0.1)] px-3 py-2 text-xs text-[var(--c-gold-strong)]">
             {reason}
           </p>
         )}
 
         {/* balances */}
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgba(13,22,18,0.55)", border: "1px solid rgba(201,162,39,0.14)" }}>
-            <p className="font-display text-lg font-bold text-[#5fb884] tabular-nums">
+          <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgb(var(--rgb-surface) / 0.55)", border: "1px solid rgb(var(--rgb-gold) / 0.14)" }}>
+            <p className="font-display text-lg font-bold text-[var(--c-green-text)] tabular-nums">
               {usd === null ? "—" : usd.toFixed(2)}
             </p>
-            <p className="text-[0.65rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">USDC balance</p>
+            <p className="text-[0.65rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">USDC balance</p>
           </div>
-          <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgba(13,22,18,0.55)", border: "1px solid rgba(201,162,39,0.14)" }}>
-            <p className="font-display text-lg font-bold text-[#E8C040] tabular-nums">
+          <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgb(var(--rgb-surface) / 0.55)", border: "1px solid rgb(var(--rgb-gold) / 0.14)" }}>
+            <p className="font-display text-lg font-bold text-[var(--c-gold-strong)] tabular-nums">
               {arena === null ? "—" : arena.toLocaleString()}
             </p>
-            <p className="text-[0.65rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">ARENA balance</p>
+            <p className="text-[0.65rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">ARENA balance</p>
           </div>
         </div>
 
         {done ? (
-          <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-[rgba(26,107,63,0.14)] px-4 py-5 text-center">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-[rgba(95,184,132,0.2)] text-[#5fb884]">
+          <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-[rgb(var(--rgb-green-deep)_/_0.14)] px-4 py-5 text-center">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-[rgb(var(--rgb-green)_/_0.2)] text-[var(--c-green-text)]">
               <IconCheck size={24} />
             </span>
-            <p className="font-display text-lg font-bold text-[#5fb884]">Bought {buyArena.toLocaleString()} ARENA</p>
-            <p className="text-xs text-[rgba(216,204,176,0.55)]">
-              New balance: <span className="font-bold text-[#E8C040]">{arena?.toLocaleString() ?? "—"} ARENA</span>
+            <p className="font-display text-lg font-bold text-[var(--c-green-text)]">Bought {buyArena.toLocaleString()} ARENA</p>
+            <p className="text-xs text-[rgb(var(--rgb-text)_/_0.55)]">
+              New balance: <span className="font-bold text-[var(--c-gold-strong)]">{arena?.toLocaleString() ?? "—"} ARENA</span>
             </p>
             <button onClick={onClose} className="btn-gold mt-2 w-full text-sm">
               Done
             </button>
           </div>
         ) : !account ? (
-          <p className="mt-5 rounded-lg bg-[rgba(201,162,39,0.08)] px-3 py-3 text-center text-sm text-[#E8C040]">
+          <p className="mt-5 rounded-lg bg-[rgb(var(--rgb-gold)_/_0.08)] px-3 py-3 text-center text-sm text-[var(--c-gold-strong)]">
             Connect your wallet (top-right) to buy ARENA.
           </p>
         ) : (
@@ -189,7 +189,7 @@ export default function ExchangeModal({
               value={amount}
               disabled={busy}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-xl border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-3 py-2.5 text-lg font-bold text-[#e8dcc0] tabular-nums outline-none focus:border-[rgba(201,162,39,0.6)]"
+              className="w-full rounded-xl border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-3 py-2.5 text-lg font-bold text-[var(--c-text-bright)] tabular-nums outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
             />
             <div className="mt-2 flex gap-2">
               {PRESETS.map((p) => (
@@ -197,7 +197,7 @@ export default function ExchangeModal({
                   key={p}
                   disabled={busy}
                   onClick={() => setAmount(String(p))}
-                  className="flex-1 rounded-lg border border-[rgba(201,162,39,0.18)] bg-[rgba(255,255,255,0.03)] py-1 text-xs font-semibold text-[#d8ccb0] transition hover:border-[rgba(201,162,39,0.5)] hover:bg-[rgba(201,162,39,0.1)]"
+                  className="flex-1 rounded-lg border border-[rgb(var(--rgb-gold)_/_0.18)] bg-[rgb(var(--rgb-overlay)_/_0.03)] py-1 text-xs font-semibold text-[var(--c-text)] transition hover:border-[rgb(var(--rgb-gold)_/_0.5)] hover:bg-[rgb(var(--rgb-gold)_/_0.1)]"
                 >
                   {p.toLocaleString()}
                 </button>
@@ -205,17 +205,17 @@ export default function ExchangeModal({
             </div>
 
             {/* quote */}
-            <div className="mt-4 flex items-center justify-center gap-3 rounded-xl bg-[rgba(13,22,18,0.5)] px-4 py-3 text-sm">
-              <span className="font-bold text-[#5fb884] tabular-nums">{usdCost.toFixed(usdCost < 1 ? 4 : 2)} USDC</span>
-              <IconArrowNarrowRight size={18} className="text-[rgba(216,204,176,0.4)]" />
-              <span className="font-bold text-[#E8C040] tabular-nums">{buyArena.toLocaleString()} ARENA</span>
+            <div className="mt-4 flex items-center justify-center gap-3 rounded-xl bg-[rgb(var(--rgb-surface)_/_0.5)] px-4 py-3 text-sm">
+              <span className="font-bold text-[var(--c-green-text)] tabular-nums">{usdCost.toFixed(usdCost < 1 ? 4 : 2)} USDC</span>
+              <IconArrowNarrowRight size={18} className="text-[rgb(var(--rgb-text)_/_0.4)]" />
+              <span className="font-bold text-[var(--c-gold-strong)] tabular-nums">{buyArena.toLocaleString()} ARENA</span>
             </div>
 
             {busy && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[rgba(216,204,176,0.75)]">
-                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
+              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[rgb(var(--rgb-text)_/_0.75)]">
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--c-gold-strong)] border-t-transparent" />
                 {step || "Working…"}{" "}
-                <span className="text-xs text-[rgba(216,204,176,0.4)]">(confirm in your wallet)</span>
+                <span className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]">(confirm in your wallet)</span>
               </div>
             )}
 
@@ -229,7 +229,7 @@ export default function ExchangeModal({
               </button>
             )}
 
-            {error && <p className="mt-3 text-center text-xs text-[#e06666]">{error}</p>}
+            {error && <p className="mt-3 text-center text-xs text-[var(--c-red-text)]">{error}</p>}
           </>
         )}
       </div>

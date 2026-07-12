@@ -222,9 +222,12 @@ export default function JitsiVideo({
     }
   }
 
+  // The 360px default is wider than a 360px phone once the 12px inset is added,
+  // so cap the floating window to the viewport rather than letting it hang off.
+  const clamp = { maxWidth: "calc(100vw - 24px)", maxHeight: "calc(100vh - 24px)" };
   const winStyle: CSSProperties = pos
-    ? { left: pos.x, top: pos.y, width: size.w, height: size.h }
-    : { right: 12, bottom: 12, width: size.w, height: size.h };
+    ? { left: pos.x, top: pos.y, width: size.w, height: size.h, ...clamp }
+    : { right: 12, bottom: 12, width: size.w, height: size.h, ...clamp };
 
   return (
     <>
@@ -238,7 +241,7 @@ export default function JitsiVideo({
           >
             <IconVideo size={16} /> {busy ? "Starting…" : "Start video call"}
           </button>
-          {error && <p className="text-center text-[11px] text-[#e85050]">{error}</p>}
+          {error && <p className="text-center text-[11px] text-[var(--c-red-text)]">{error}</p>}
         </div>
       )}
 
@@ -249,20 +252,20 @@ export default function JitsiVideo({
         createPortal(
           <div
             ref={winRef}
-            className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[rgba(201,162,39,0.4)] bg-black shadow-2xl"
+            className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[rgb(var(--rgb-gold)_/_0.4)] bg-black shadow-2xl"
             style={winStyle}
           >
             <div
-              className="flex h-8 shrink-0 cursor-move touch-none select-none items-center justify-between bg-[rgba(13,22,18,0.95)] px-2"
+              className="flex h-8 shrink-0 cursor-move touch-none select-none items-center justify-between bg-[rgb(var(--rgb-surface)_/_0.95)] px-2"
               onPointerDown={onDragDown}
               onPointerMove={onDragMove}
               onPointerUp={onDragUp}
             >
-              <span className="text-[11px] font-semibold text-[rgba(216,204,176,0.6)]">⠿ Video — drag</span>
+              <span className="text-[11px] font-semibold text-[rgb(var(--rgb-text)_/_0.6)]">⠿ Video — drag</span>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={stop}
-                className="rounded-full bg-[rgba(184,24,24,0.9)] px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-[rgba(184,24,24,1)]"
+                className="rounded-full bg-[rgb(var(--rgb-red)_/_0.9)] px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-[rgb(var(--rgb-red)_/_1)]"
               >
                 Leave
               </button>
@@ -280,7 +283,7 @@ export default function JitsiVideo({
             ))}
             <div
               className="pointer-events-none absolute bottom-0 right-0 h-4 w-4"
-              style={{ background: "linear-gradient(135deg, transparent 45%, rgba(201,162,39,0.75) 45%)" }}
+              style={{ background: "linear-gradient(135deg, transparent 45%, rgb(var(--rgb-gold) / 0.75) 45%)" }}
             />
           </div>,
           document.body

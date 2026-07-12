@@ -17,6 +17,7 @@ import { Chessboard } from "react-chessboard";
 
 export default function ArchivedGame({ game }: { game: Game }) {
   const [boardWidth, setBoardWidth] = useState(480);
+  const boardBoxRef = useRef<HTMLDivElement>(null);
   const moveListRef = useRef<HTMLDivElement>(null);
   const [navFen, setNavFen] = useState<string | null>(null);
   const [navIndex, setNavIndex] = useState<number | null>(null);
@@ -38,16 +39,13 @@ export default function ArchivedGame({ game }: { game: Game }) {
     }
   );
 
+  // Container-driven, not viewport-driven — see the same fix in GamePage.
   function handleResize() {
-    if (window.innerWidth >= 1920) {
-      setBoardWidth(580);
-    } else if (window.innerWidth >= 1536) {
-      setBoardWidth(540);
-    } else if (window.innerWidth >= 768) {
-      setBoardWidth(480);
-    } else {
-      setBoardWidth(350);
-    }
+    const available = boardBoxRef.current?.clientWidth;
+    if (!available) return;
+
+    const max = window.innerWidth >= 1920 ? 580 : window.innerWidth >= 1536 ? 540 : 480;
+    setBoardWidth(Math.min(available, max));
   }
 
   // auto scroll for moves
@@ -223,12 +221,12 @@ export default function ArchivedGame({ game }: { game: Game }) {
   }
 
   return (
-    <div className="flex w-full flex-wrap justify-center gap-6 px-4 py-4 lg:gap-10 2xl:gap-16">
-      <div className="h-min">
+    <div className="flex w-full flex-wrap justify-center gap-6 py-4 lg:gap-10 2xl:gap-16">
+      <div ref={boardBoxRef} className="h-min w-full max-w-[560px]">
         <Chessboard
           boardWidth={boardWidth}
           customDarkSquareStyle={{ backgroundColor: "#4b7399" }}
-          customLightSquareStyle={{ backgroundColor: "#eae9d2" }}
+          customLightSquareStyle={{ backgroundColor: "#e8dcc0" }}
           position={navFen || actualGame.fen()}
           boardOrientation={flipBoard ? "black" : "white"}
           isDraggablePiece={() => false}
@@ -241,8 +239,9 @@ export default function ArchivedGame({ game }: { game: Game }) {
         />
       </div>
 
-      <div className="flex max-w-lg flex-1 flex-col items-center justify-center gap-4">
-        <div className="mb-auto flex w-full p-2">
+      <div className="flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4">
+        {/* Two side-by-side columns squeeze to ~150px each on a phone — stack them. */}
+        <div className="mb-auto flex w-full flex-col gap-4 p-2 md:flex-row md:gap-0">
           <div className="flex flex-1 flex-col items-center justify-between">
             {getPlayerHtml("top")}
             <div className="my-auto flex w-full items-center">
@@ -264,7 +263,7 @@ export default function ArchivedGame({ game }: { game: Game }) {
               >
                 <label
                   tabIndex={0}
-                  className="badge badge-md bg-base-300 text-base-content h-8 gap-1 font-mono text-xs sm:h-5 sm:text-sm"
+                  className="badge badge-md bg-base-300 text-base-content h-auto min-h-[2rem] max-w-full gap-1 whitespace-normal break-all py-1 font-mono text-xs sm:text-sm"
                   onClick={copyLink}
                 >
                   <IconCopy size={16} />
@@ -280,7 +279,8 @@ export default function ArchivedGame({ game }: { game: Game }) {
                 <tbody>{getMoveListHtml()}</tbody>
               </table>
             </div>
-            <div className="flex h-4 w-full">
+            {/* was h-4: the 32px buttons inside overflowed a 16px-tall row */}
+            <div className="flex h-10 w-full">
               <button
                 className={
                   "btn btn-sm flex-grow rounded-r-none" +

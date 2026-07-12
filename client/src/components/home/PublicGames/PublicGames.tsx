@@ -10,14 +10,14 @@ export default async function PublicGames() {
   return (
     <div className="flex flex-col">
       <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[#E8C040]">
+        <h2 className="font-display flex items-center gap-2 text-lg font-bold text-[var(--c-gold-strong)]">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#5fb884] opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#5fb884]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--c-green-text)] opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--c-green-text)]" />
           </span>
           Live games
           {count > 0 && (
-            <span className="rounded-full bg-[rgba(201,162,39,0.15)] px-2 py-0.5 text-xs text-[#E8C040]">
+            <span className="rounded-full bg-[rgb(var(--rgb-gold)_/_0.15)] px-2 py-0.5 text-xs text-[var(--c-gold-strong)]">
               {count}
             </span>
           )}
@@ -27,7 +27,7 @@ export default async function PublicGames() {
 
       <div
         className="glass-dark max-h-[30rem] min-h-[20rem] overflow-y-auto rounded-2xl p-2"
-        style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+        style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}
       >
         {games && games.length > 0 ? (
           <ul className="flex flex-col gap-1">
@@ -45,7 +45,7 @@ export default async function PublicGames() {
             ))}
           </ul>
         ) : (
-          <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-1 px-4 text-center text-sm text-[rgba(216,204,176,0.4)]">
+          <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-1 px-4 text-center text-sm text-[rgb(var(--rgb-text)_/_0.4)]">
             <span>No live games right now.</span>
             <span className="text-xs">Create a game and share the link — it&apos;ll show up here to watch.</span>
           </div>

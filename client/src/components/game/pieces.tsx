@@ -24,7 +24,9 @@ function Piece({ type, white, squareWidth }: { type: string; white: boolean; squ
         style={{
           fontSize: squareWidth * 0.82,
           lineHeight: 1,
-          color: white ? "#f3e7c6" : "#1c130b",
+          // Piece colours are board furniture, not page chrome — they must not
+          // follow the theme, or the white pieces go black on the light board.
+          color: white ? "#e8dcc0" : "#1c130b",
           WebkitTextStroke: `${stroke}px ${white ? "#7a5c12" : "#c9a227"}`,
           textShadow: "0 2px 3px rgba(0,0,0,0.45)",
         }}

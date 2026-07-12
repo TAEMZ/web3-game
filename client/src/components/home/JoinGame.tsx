@@ -65,7 +65,7 @@ export default function JoinGame() {
         />
       </div>
 
-      {notFound && <p className="text-sm text-[#e85050]">Game not found — check the code.</p>}
+      {notFound && <p className="text-sm text-[var(--c-red-text)]">Game not found — check the code.</p>}
 
       <button className="btn-dark" type="submit" disabled={buttonLoading}>
         {buttonLoading ? "Joining…" : "Join Game"}

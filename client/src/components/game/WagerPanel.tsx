@@ -207,40 +207,40 @@ export default function WagerPanel({
   const iAmCreator = !!wager && wager.p1_user_id === myUserId;
 
   return (
-    <div className="glass-dark rounded-2xl p-4" style={{ border: "1px solid rgba(201,162,39,0.2)" }}>
-      <h3 className="font-display mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[#E8C040]">
+    <div className="glass-dark rounded-2xl p-4" style={{ border: "1px solid rgb(var(--rgb-gold) / 0.2)" }}>
+      <h3 className="font-display mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[var(--c-gold-strong)]">
         <IconCoins size={16} /> Wager
       </h3>
 
       {busy && (
-        <div className="flex items-center gap-2 text-sm text-[rgba(216,204,176,0.75)]">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
-          {step || "Working…"} <span className="text-xs text-[rgba(216,204,176,0.4)]">(confirm in your wallet)</span>
+        <div className="flex items-center gap-2 text-sm text-[rgb(var(--rgb-text)_/_0.75)]">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--c-gold-strong)] border-t-transparent" />
+          {step || "Working…"} <span className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]">(confirm in your wallet)</span>
         </div>
       )}
 
       {/* Only the match creator places the opening bet; the opponent just matches it. */}
       {!busy && !wager && amPlayer && !isCreator && (
-        <p className="flex items-center gap-2 text-sm text-[#E8C040]">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
+        <p className="flex items-center gap-2 text-sm text-[var(--c-gold-strong)]">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--c-gold-strong)] border-t-transparent" />
           Waiting for the match creator to place {presetStake ? `their ${presetStake} ARENA bet` : "their bet"}…
         </p>
       )}
 
       {!busy && !wager && amPlayer && isCreator && (
         <>
-          <p className="mb-2 text-xs text-[rgba(216,204,176,0.55)]">
+          <p className="mb-2 text-xs text-[rgb(var(--rgb-text)_/_0.55)]">
             Bet ARENA from your wallet — winner takes the pot minus {HOUSE_FEE_PERCENT}% platform fee. You&apos;ll approve + stake (gas is on us).
           </p>
           {!account ? (
-            <p className="rounded-lg bg-[rgba(201,162,39,0.08)] px-3 py-2 text-xs text-[#E8C040]">
+            <p className="rounded-lg bg-[rgb(var(--rgb-gold)_/_0.08)] px-3 py-2 text-xs text-[var(--c-gold-strong)]">
               Connect your wallet (top-right) to place a bet.
             </p>
           ) : presetStake && presetStake > 0 ? (
             <div>
-              <p className="mb-2 text-sm text-[#d8ccb0]">
-                Your stake: <span className="font-bold text-[#E8C040] tabular-nums">{presetStake} ARENA</span>
-                <span className="text-xs text-[rgba(216,204,176,0.4)]"> · set at match creation</span>
+              <p className="mb-2 text-sm text-[var(--c-text)]">
+                Your stake: <span className="font-bold text-[var(--c-gold-strong)] tabular-nums">{presetStake} ARENA</span>
+                <span className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]"> · set at match creation</span>
               </p>
               <button onClick={create} className="btn-gold w-full text-sm">
                 Place your {presetStake} ARENA bet
@@ -254,7 +254,7 @@ export default function WagerPanel({
                 value={stake}
                 onChange={(e) => setStake(e.target.value)}
                 placeholder="stake"
-                className="w-24 rounded-lg border border-[rgba(201,162,39,0.2)] bg-[rgba(0,0,0,0.3)] px-2.5 py-1.5 text-sm text-[#e8dcc0] outline-none focus:border-[rgba(201,162,39,0.6)]"
+                className="min-h-[40px] w-24 min-w-0 flex-1 rounded-lg border border-[rgb(var(--rgb-gold)_/_0.2)] bg-[var(--c-well-30)] px-2.5 py-1.5 text-base text-[var(--c-text-bright)] outline-none focus:border-[rgb(var(--rgb-gold)_/_0.6)]"
               />
               <button onClick={create} className="btn-gold flex-1 text-sm">
                 Bet ARENA
@@ -265,40 +265,40 @@ export default function WagerPanel({
       )}
 
       {!busy && !wager && !amPlayer && (
-        <p className="text-xs text-[rgba(216,204,176,0.45)]">Only players can start a wager.</p>
+        <p className="text-xs text-[rgb(var(--rgb-text)_/_0.45)]">Only players can start a wager.</p>
       )}
 
       {!busy && wager?.state === "staking" && (
-        <p className="flex items-center gap-2 text-sm text-[#E8C040]">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#E8C040] border-t-transparent" />
+        <p className="flex items-center gap-2 text-sm text-[var(--c-gold-strong)]">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--c-gold-strong)] border-t-transparent" />
           {wager.p1_user_id === myUserId ? "Finishing your bet…" : "Your opponent is placing a bet…"}
         </p>
       )}
 
       {!busy && wager?.state === "open" && (
         <div className="text-sm">
-          <p className="mb-2 text-[#d8ccb0]">
-            Stake: <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum} ARENA</span>
-            <span className="text-xs text-[rgba(216,204,176,0.4)]"> · winner takes {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} <span className="text-[rgba(216,204,176,0.3)]">({HOUSE_FEE_PERCENT}% fee)</span></span>
+          <p className="mb-2 text-[var(--c-text)]">
+            Stake: <span className="font-bold text-[var(--c-gold-strong)] tabular-nums">{stakeNum} ARENA</span>
+            <span className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]"> · winner takes {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} <span className="text-[rgb(var(--rgb-text)_/_0.3)]">({HOUSE_FEE_PERCENT}% fee)</span></span>
           </p>
           {iAmCreator ? (
-            <p className="text-xs text-[rgba(216,204,176,0.5)]">Waiting for your opponent to accept…</p>
+            <p className="text-xs text-[rgb(var(--rgb-text)_/_0.5)]">Waiting for your opponent to accept…</p>
           ) : amPlayer ? (
             <button onClick={join} className="btn-gold w-full text-sm">
               Accept &amp; match {stakeNum} ARENA
             </button>
           ) : (
-            <p className="text-xs text-[rgba(216,204,176,0.45)]">A {stakeNum} ARENA wager is set.</p>
+            <p className="text-xs text-[rgb(var(--rgb-text)_/_0.45)]">A {stakeNum} ARENA wager is set.</p>
           )}
         </div>
       )}
 
       {!busy && wager?.state === "funded" && (
         <div className="text-sm">
-          <p className="text-[#d8ccb0]">
-            💰 <span className="font-bold text-[#E8C040] tabular-nums">{stakeNum * 2} ARENA</span> pot
+          <p className="text-[var(--c-text)]">
+            💰 <span className="font-bold text-[var(--c-gold-strong)] tabular-nums">{stakeNum * 2} ARENA</span> pot
           </p>
-          <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
+          <p className="mt-1 text-xs text-[rgb(var(--rgb-text)_/_0.5)]">
             Both staked {stakeNum}. Winner receives {Math.floor(stakeNum * 2 * (1 - HOUSE_FEE_PERCENT / 100))} ARENA ({HOUSE_FEE_PERCENT}% platform fee).
           </p>
         </div>
@@ -306,16 +306,16 @@ export default function WagerPanel({
 
       {!busy && wager?.state === "settled" && (
         <div className="text-sm">
-          <p className="text-[#5fb884]">✓ Wager settled — winner paid {wager.fee_amount ? `${Math.floor(stakeNum * 2 - wager.fee_amount)} ARENA` : "the pot"}.</p>
+          <p className="text-[var(--c-green-text)]">✓ Wager settled — winner paid {wager.fee_amount ? `${Math.floor(stakeNum * 2 - wager.fee_amount)} ARENA` : "the pot"}.</p>
           {wager.fee_amount ? (
-            <p className="text-xs text-[rgba(216,204,176,0.4)]">Platform fee: {wager.fee_amount} ARENA ({HOUSE_FEE_PERCENT}%)</p>
+            <p className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]">Platform fee: {wager.fee_amount} ARENA ({HOUSE_FEE_PERCENT}%)</p>
           ) : null}
           {wager.settle_tx && (
             <a
               href={`https://sepolia.etherscan.io/tx/${wager.settle_tx}`}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-[rgba(216,204,176,0.5)] underline hover:text-[#E8C040]"
+              className="text-xs text-[rgb(var(--rgb-text)_/_0.5)] underline hover:text-[var(--c-gold-strong)]"
             >
               view on-chain
             </a>
@@ -323,7 +323,7 @@ export default function WagerPanel({
         </div>
       )}
 
-      {error && <p className="mt-2 text-xs text-[#e06666]">{error}</p>}
+      {error && <p className="mt-2 text-xs text-[var(--c-red-text)]">{error}</p>}
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
                 <h1 className="font-display text-4xl md:text-5xl font-bold gold-text-shimmer mb-2 flex items-center justify-center gap-3">
                     <IconTrophy size={36} /> Leaderboard
                 </h1>
-                <p className="text-[rgba(216,204,176,0.6)]">
+                <p className="text-[rgb(var(--rgb-text)_/_0.6)]">
                     Top players ranked by ARENA score
                 </p>
             </div>
@@ -47,22 +47,26 @@ export default function LeaderboardPage() {
                     <span className="loading loading-spinner loading-lg text-warning" />
                 </div>
             ) : data.length === 0 ? (
-                <div className="glass-dark rounded-2xl border border-[rgba(201,162,39,0.18)] p-12 text-center">
-                    <p className="text-lg text-[rgba(216,204,176,0.5)]">No players yet.</p>
-                    <p className="mt-2 text-sm text-[rgba(216,204,176,0.35)]">
+                <div className="glass-dark rounded-2xl border border-[rgb(var(--rgb-gold)_/_0.18)] p-12 text-center">
+                    <p className="text-lg text-[rgb(var(--rgb-text)_/_0.5)]">No players yet.</p>
+                    <p className="mt-2 text-sm text-[rgb(var(--rgb-text)_/_0.35)]">
                         Play some games to claim your spot!
                     </p>
                 </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px] text-sm">
+                    <table className="w-full min-w-[320px] text-sm">
                         <thead>
-                            <tr className="border-y border-[rgba(201,162,39,0.12)] text-left text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
+                            <tr className="border-y border-[rgb(var(--rgb-gold)_/_0.12)] text-left text-[0.7rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">
                                 <th className="px-4 py-2 font-semibold w-12 text-center">#</th>
                                 <th className="px-3 py-2 font-semibold">Player</th>
                                 <th className="px-3 py-2 text-center font-semibold">W / L / D</th>
                                 <th className="px-3 py-2 text-right font-semibold">Score</th>
-                                <th className="px-4 py-2 text-right font-semibold">Wallet</th>
+                                {/* Wallet is the least load-bearing column — drop it
+                                    first rather than make phones scroll sideways. */}
+                                <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">
+                                    Wallet
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,10 +76,10 @@ export default function LeaderboardPage() {
                                 return (
                                     <tr
                                         key={entry.id}
-                                        className={`border-b border-[rgba(201,162,39,0.07)] transition-colors ${
+                                        className={`border-b border-[rgb(var(--rgb-gold)_/_0.07)] transition-colors ${
                                             isMe
-                                                ? "bg-[rgba(201,162,39,0.08)]"
-                                                : "hover:bg-[rgba(201,162,39,0.04)]"
+                                                ? "bg-[rgb(var(--rgb-gold)_/_0.08)]"
+                                                : "hover:bg-[rgb(var(--rgb-gold)_/_0.04)]"
                                         }`}
                                     >
                                         <td className="px-4 py-3 text-center">
@@ -96,7 +100,7 @@ export default function LeaderboardPage() {
                                                     )}
                                                 </span>
                                             ) : (
-                                                <span className="text-[rgba(216,204,176,0.45)] tabular-nums">
+                                                <span className="text-[rgb(var(--rgb-text)_/_0.45)] tabular-nums">
                                                     {entry.rank}
                                                 </span>
                                             )}
@@ -107,36 +111,36 @@ export default function LeaderboardPage() {
                                                     href={`/user/${entry.name}`}
                                                     className={`font-semibold transition-colors ${
                                                         isMe
-                                                            ? "text-[#E8C040]"
-                                                            : "text-[#d8ccb0] hover:text-[#E8C040]"
+                                                            ? "text-[var(--c-gold-strong)]"
+                                                            : "text-[var(--c-text)] hover:text-[var(--c-gold-strong)]"
                                                     }`}
                                                 >
                                                     {entry.name}
                                                 </Link>
                                                 {isMe && (
-                                                    <span className="rounded-full bg-[rgba(201,162,39,0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#E8C040]">
+                                                    <span className="rounded-full bg-[rgb(var(--rgb-gold)_/_0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[var(--c-gold-strong)]">
                                                         You
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="px-3 py-3 text-center tabular-nums">
-                                            <span className="text-[#5fb884]">{entry.wins}</span>
-                                            <span className="text-[rgba(216,204,176,0.3)]"> / </span>
-                                            <span className="text-[#e06666]">{entry.losses}</span>
-                                            <span className="text-[rgba(216,204,176,0.3)]"> / </span>
-                                            <span className="text-[#E8C040]">{entry.draws}</span>
+                                            <span className="text-[var(--c-green-text)]">{entry.wins}</span>
+                                            <span className="text-[rgb(var(--rgb-text)_/_0.3)]"> / </span>
+                                            <span className="text-[var(--c-red-text)]">{entry.losses}</span>
+                                            <span className="text-[rgb(var(--rgb-text)_/_0.3)]"> / </span>
+                                            <span className="text-[var(--c-gold-strong)]">{entry.draws}</span>
                                         </td>
-                                        <td className="px-3 py-3 text-right font-bold tabular-nums text-[#E8C040]">
+                                        <td className="px-3 py-3 text-right font-bold tabular-nums text-[var(--c-gold-strong)]">
                                             {entry.score}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="hidden px-4 py-3 text-right sm:table-cell">
                                             {entry.hasWallet ? (
-                                                <span className="text-xs text-[rgba(95,184,132,0.7)]">
+                                                <span className="text-xs text-[rgb(var(--rgb-green)_/_0.7)]">
                                                     ✅ Linked
                                                 </span>
                                             ) : (
-                                                <span className="text-xs text-[rgba(216,204,176,0.35)]">
+                                                <span className="text-xs text-[rgb(var(--rgb-text)_/_0.35)]">
                                                     —
                                                 </span>
                                             )}
@@ -152,7 +156,7 @@ export default function LeaderboardPage() {
             <div className="mt-8 text-center">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,162,39,0.25)] px-5 py-2 text-sm font-semibold text-[#E8C040] transition hover:bg-[rgba(201,162,39,0.1)]"
+                    className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--rgb-gold)_/_0.25)] px-5 py-2 text-sm font-semibold text-[var(--c-gold-strong)] transition hover:bg-[rgb(var(--rgb-gold)_/_0.1)]"
                 >
                     <IconPlayerPlay size={16} />
                     Play Now

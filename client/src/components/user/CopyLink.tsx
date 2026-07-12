@@ -25,7 +25,7 @@ export default function CopyLink({ name }: { name: string }) {
     <div className={"dropdown dropdown-top dropdown-end" + (copiedLink ? " dropdown-open" : "")}>
       <label
         tabIndex={0}
-        className="badge badge-md bg-base-300 text-base-content h-8 gap-1 font-mono text-xs sm:h-5 sm:text-sm"
+        className="badge badge-md bg-base-300 text-base-content h-auto max-w-full min-h-[2rem] gap-1 whitespace-normal break-all py-1 font-mono text-xs sm:text-sm"
         onClick={copyLink}
       >
         <IconCopy size={16} />

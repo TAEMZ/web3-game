@@ -246,12 +246,12 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
   return (
     <div
       className="glass-dark flex flex-col gap-2 rounded-xl p-3"
-      style={{ border: "1px solid rgba(201,162,39,0.18)" }}
+      style={{ border: "1px solid rgb(var(--rgb-gold) / 0.18)" }}
     >
       <div className="flex items-center justify-between">
-        <span className="font-display text-sm font-bold text-[#E8C040]">Video call</span>
+        <span className="font-display text-sm font-bold text-[var(--c-gold-strong)]">Video call</span>
         {joined && (
-          <span className="text-[11px] text-[rgba(216,204,176,0.5)]">
+          <span className="text-[11px] text-[rgb(var(--rgb-text)_/_0.5)]">
             {isPlayer ? "Live" : "Watching"}
           </span>
         )}
@@ -266,13 +266,13 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
           >
             <IconVideo size={16} /> {isPlayer ? "Start video call" : "Watch players' cameras"}
           </button>
-          {status && <p className="text-center text-[11px] text-[#e85050]">{status}</p>}
+          {status && <p className="text-center text-[11px] text-[var(--c-red-text)]">{status}</p>}
         </>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-2">
             {playerRemotes.length === 0 && (
-              <div className="flex aspect-video items-center justify-center rounded-lg bg-[rgba(9,21,16,0.7)] px-2 text-center text-xs leading-tight text-[rgba(216,204,176,0.5)]">
+              <div className="flex aspect-video items-center justify-center rounded-lg bg-[rgb(var(--rgb-surface)_/_0.7)] px-2 text-center text-xs leading-tight text-[rgb(var(--rgb-text)_/_0.5)]">
                 Waiting for {isPlayer ? "your opponent" : "the players"} to turn on their camera…
               </div>
             )}
@@ -306,14 +306,14 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
                 <button
                   onClick={toggleMic}
                   title="Toggle mic"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-[rgba(255,255,255,0.08)] text-[#d8ccb0] transition hover:bg-[rgba(255,255,255,0.16)]"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-[rgb(var(--rgb-overlay)_/_0.08)] text-[var(--c-text)] transition hover:bg-[rgb(var(--rgb-overlay)_/_0.16)]"
                 >
                   {micOn ? <IconMicrophone size={16} /> : <IconMicrophoneOff size={16} />}
                 </button>
                 <button
                   onClick={toggleCam}
                   title="Toggle camera"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-[rgba(255,255,255,0.08)] text-[#d8ccb0] transition hover:bg-[rgba(255,255,255,0.16)]"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-[rgb(var(--rgb-overlay)_/_0.08)] text-[var(--c-text)] transition hover:bg-[rgb(var(--rgb-overlay)_/_0.16)]"
                 >
                   {camOn ? <IconVideo size={16} /> : <IconVideoOff size={16} />}
                 </button>
@@ -322,7 +322,7 @@ export default function VideoChat({ socket, side }: { socket: Socket; side: Role
             <button
               onClick={leave}
               title={isPlayer ? "End call" : "Stop watching"}
-              className="grid h-8 w-8 place-items-center rounded-full bg-[rgba(184,24,24,0.8)] text-white transition hover:bg-[rgba(184,24,24,1)]"
+              className="grid h-8 w-8 place-items-center rounded-full bg-[rgb(var(--rgb-red)_/_0.8)] text-white transition hover:bg-[rgb(var(--rgb-red)_/_1)]"
             >
               <IconPhoneOff size={16} />
             </button>

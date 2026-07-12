@@ -46,12 +46,12 @@ const DRAW_REWARD = 2;
 function VictoryHero() {
   return (
     <div className="relative grid h-28 w-28 place-items-center">
-      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 65%)" }} />
+      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgb(var(--rgb-gold) / 0.4) 0%, transparent 65%)" }} />
       <div
         className="absolute inset-[-10%] rounded-full animate-spin"
-        style={{ animationDuration: "9s", background: "conic-gradient(from 0deg, transparent, rgba(26,107,63,0.4), transparent 55%, rgba(201,162,39,0.25), transparent 90%)" }}
+        style={{ animationDuration: "9s", background: "conic-gradient(from 0deg, transparent, rgb(var(--rgb-green-deep) / 0.4), transparent 55%, rgb(var(--rgb-gold) / 0.25), transparent 90%)" }}
       />
-      <span className="relative font-display text-7xl" style={{ color: "#f5d970", filter: "drop-shadow(0 0 16px rgba(201,162,39,0.85))" }}>
+      <span className="relative font-display text-7xl" style={{ color: "var(--c-gold-bright)", filter: "drop-shadow(0 0 16px rgb(var(--rgb-gold) / 0.85))" }}>
         ♔
       </span>
     </div>
@@ -62,13 +62,13 @@ function VictoryHero() {
 function FallenKingHero({ resigned }: { resigned?: boolean }) {
   return (
     <div className="relative grid h-28 w-28 place-items-center">
-      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgba(184,24,24,0.32) 0%, transparent 65%)" }} />
+      <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle, rgb(var(--rgb-red) / 0.32) 0%, transparent 65%)" }} />
       <span
         className="relative inline-block text-7xl"
         style={{
           transform: resigned ? "none" : "rotate(82deg)",
-          color: resigned ? "#d8ccb0" : "#7a2b2b",
-          filter: "drop-shadow(0 9px 6px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgba(184,24,24,0.55))",
+          color: resigned ? "var(--c-text)" : "#7a2b2b",
+          filter: "drop-shadow(0 9px 6px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgb(var(--rgb-red) / 0.55))",
         }}
       >
         {resigned ? "🏳️" : "♚"}
@@ -156,19 +156,19 @@ export default function GameOverModal({
 
   // ── Per-outcome theme ──
   let title = "Game Over";
-  let titleColor = "#E8C040";
-  let glow = "rgba(201,162,39,0.5)";
-  let panelBg = "rgba(13,22,18,0.94)";
-  let border = "rgba(201,162,39,0.3)";
+  let titleColor = "var(--c-gold-strong)";
+  let glow = "rgb(var(--rgb-gold) / 0.5)";
+  let panelBg = "rgb(var(--rgb-surface) / 0.94)";
+  let border = "rgb(var(--rgb-gold) / 0.3)";
   let hero: ReactNode = <span className="text-7xl opacity-70">♟️</span>;
   let subtitle = "";
 
   if (outcome === "win") {
     title = "Victory!";
-    titleColor = "#f5d970";
-    glow = "rgba(201,162,39,0.6)";
-    panelBg = "linear-gradient(180deg, rgba(15,50,34,0.96) 0%, rgba(13,22,18,0.96) 60%)";
-    border = "rgba(201,162,39,0.42)";
+    titleColor = "var(--c-gold-bright)";
+    glow = "rgb(var(--rgb-gold) / 0.6)";
+    panelBg = "linear-gradient(180deg, rgba(15,50,34,0.96) 0%, rgb(var(--rgb-surface) / 0.96) 60%)";
+    border = "rgb(var(--rgb-gold) / 0.42)";
     hero = <VictoryHero />;
     subtitle = reason === "resignation" ? "Your opponent resigned." : `You won ${rt}.`;
   } else if (outcome === "draw") {
@@ -176,10 +176,10 @@ export default function GameOverModal({
     hero = <span className="text-7xl">🤝</span>;
     subtitle = rt ? `The game ended in a draw ${rt}.` : "The game ended in a draw.";
   } else if (outcome === "loss") {
-    titleColor = "#e06666";
-    glow = "rgba(184,24,24,0.45)";
-    panelBg = "linear-gradient(180deg, rgba(42,16,16,0.96) 0%, rgba(13,22,18,0.96) 62%)";
-    border = "rgba(184,24,24,0.42)";
+    titleColor = "var(--c-red-text)";
+    glow = "rgb(var(--rgb-red) / 0.45)";
+    panelBg = "linear-gradient(180deg, rgba(42,16,16,0.96) 0%, rgb(var(--rgb-surface) / 0.96) 62%)";
+    border = "rgb(var(--rgb-red) / 0.42)";
     if (didResign) {
       title = "You Resigned";
       hero = <FallenKingHero resigned />;
@@ -241,26 +241,26 @@ export default function GameOverModal({
           <h2 className="font-display mb-2 text-4xl font-black" style={{ color: titleColor, textShadow: `0 0 26px ${glow}` }}>
             {title}
           </h2>
-          <p className="text-base text-[rgba(216,204,176,0.8)]">{subtitle}</p>
+          <p className="text-base text-[rgb(var(--rgb-text)_/_0.8)]">{subtitle}</p>
         </div>
 
         {outcome !== "spectator" && (
           <div className="mb-6 rounded-xl border p-4" style={{ background: "rgba(0,0,0,0.28)", borderColor: border }}>
             {outcome === "win" && wagerResult === "won" && !!wagerStake && (
-              <div className="mb-3 rounded-lg border border-[rgba(95,184,132,0.25)] bg-[rgba(95,184,132,0.06)] p-3 text-sm">
-                <p className="mb-1.5 font-semibold text-[#5fb884]">Wager payout</p>
+              <div className="mb-3 rounded-lg border border-[rgb(var(--rgb-green)_/_0.25)] bg-[rgb(var(--rgb-green)_/_0.06)] p-3 text-sm">
+                <p className="mb-1.5 font-semibold text-[var(--c-green-text)]">Wager payout</p>
                 <div className="space-y-1">
                   <div className="flex justify-between text-base font-bold">
-                    <span className="text-[#5fb884]">You received</span>
-                    <span className="tabular-nums text-[#5fb884]">{wagerReceived} ARENA</span>
+                    <span className="text-[var(--c-green-text)]">You received</span>
+                    <span className="tabular-nums text-[var(--c-green-text)]">{wagerReceived} ARENA</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[rgba(216,204,176,0.65)]">System cut ({HOUSE_FEE_PERCENT}%)</span>
-                    <span className="tabular-nums text-[#e06666]">−{wagerCut} ARENA</span>
+                    <span className="text-[rgb(var(--rgb-text)_/_0.65)]">System cut ({HOUSE_FEE_PERCENT}%)</span>
+                    <span className="tabular-nums text-[var(--c-red-text)]">−{wagerCut} ARENA</span>
                   </div>
-                  <div className="flex justify-between border-t border-[rgba(95,184,132,0.2)] pt-1">
-                    <span className="text-[rgba(216,204,176,0.65)]">Pool (both stakes)</span>
-                    <span className="tabular-nums text-[#d8ccb0]">{wagerPot} ARENA</span>
+                  <div className="flex justify-between border-t border-[rgb(var(--rgb-green)_/_0.2)] pt-1">
+                    <span className="text-[rgb(var(--rgb-text)_/_0.65)]">Pool (both stakes)</span>
+                    <span className="tabular-nums text-[var(--c-text)]">{wagerPot} ARENA</span>
                   </div>
                 </div>
               </div>
@@ -268,10 +268,10 @@ export default function GameOverModal({
             <div className="space-y-1.5">
               {lines.map((l) => (
                 <div key={l.label} className="flex items-center justify-between text-sm">
-                  <span className="text-[rgba(216,204,176,0.7)]">{l.label}</span>
+                  <span className="text-[rgb(var(--rgb-text)_/_0.7)]">{l.label}</span>
                   <span
                     className={`font-semibold tabular-nums ${
-                      l.value > 0 ? "text-[#5fb884]" : l.value < 0 ? "text-[#e06666]" : "text-[rgba(216,204,176,0.6)]"
+                      l.value > 0 ? "text-[var(--c-green-text)]" : l.value < 0 ? "text-[var(--c-red-text)]" : "text-[rgb(var(--rgb-text)_/_0.6)]"
                     }`}
                   >
                     {l.value > 0 ? "+" : ""}
@@ -280,17 +280,17 @@ export default function GameOverModal({
                 </div>
               ))}
               {lines.length === 0 && (
-                <p className="text-center text-sm text-[rgba(216,204,176,0.6)]">No token change this game.</p>
+                <p className="text-center text-sm text-[rgb(var(--rgb-text)_/_0.6)]">No token change this game.</p>
               )}
             </div>
-            <div className="mt-3 flex items-center justify-between border-t border-[rgba(201,162,39,0.15)] pt-3">
-              <span className="text-sm font-semibold text-[#E8C040]">New balance</span>
-              <span className="text-lg font-bold tabular-nums text-[#E8C040]">
+            <div className="mt-3 flex items-center justify-between border-t border-[rgb(var(--rgb-gold)_/_0.15)] pt-3">
+              <span className="text-sm font-semibold text-[var(--c-gold-strong)]">New balance</span>
+              <span className="text-lg font-bold tabular-nums text-[var(--c-gold-strong)]">
                 {balance === null ? "…" : `${balance} ARENA`}
               </span>
             </div>
             {settling && (
-              <p className="mt-1 text-right text-[0.65rem] text-[rgba(216,204,176,0.4)]">settling on-chain…</p>
+              <p className="mt-1 text-right text-[0.65rem] text-[rgb(var(--rgb-text)_/_0.4)]">settling on-chain…</p>
             )}
           </div>
         )}
@@ -299,20 +299,20 @@ export default function GameOverModal({
           <a
             href="/casual"
             className="w-full rounded-lg py-3 text-center font-semibold text-[#1a0f0a] transition-transform hover:-translate-y-0.5"
-            style={{ background: "linear-gradient(135deg,#e8c040,#c9a227 55%,#9a7a18)", boxShadow: "0 4px 18px rgba(201,162,39,0.35)" }}
+            style={{ background: "linear-gradient(135deg,var(--c-gold-strong),var(--c-gold) 55%,var(--c-gold-deep))", boxShadow: "0 4px 18px rgb(var(--rgb-gold) / 0.35)" }}
           >
             Play Again
           </a>
           <a
             href="/"
-            className="w-full rounded-lg border border-[rgba(201,162,39,0.35)] bg-[rgba(201,162,39,0.08)] py-3 text-center font-semibold text-[#E8C040] transition-colors hover:bg-[rgba(201,162,39,0.18)]"
+            className="w-full rounded-lg border border-[rgb(var(--rgb-gold)_/_0.35)] bg-[rgb(var(--rgb-gold)_/_0.08)] py-3 text-center font-semibold text-[var(--c-gold-strong)] transition-colors hover:bg-[rgb(var(--rgb-gold)_/_0.18)]"
           >
             Back to Lobby
           </a>
           {gameId ? (
             <a
               href={`/archive/${gameId}`}
-              className="w-full rounded-lg py-2.5 text-center text-sm font-semibold text-[rgba(216,204,176,0.6)] transition-colors hover:text-[#E8C040]"
+              className="w-full rounded-lg py-2.5 text-center text-sm font-semibold text-[rgb(var(--rgb-text)_/_0.6)] transition-colors hover:text-[var(--c-gold-strong)]"
             >
               Review Game
             </a>

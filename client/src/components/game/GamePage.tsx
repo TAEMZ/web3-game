@@ -69,6 +69,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
   const [boardWidth, setBoardWidth] = useState(480);
   const [boardTheme, setBoardTheme] = useState<BoardTheme>(defaultBoardTheme());
   const chessboardRef = useRef<ClearPremoves>(null);
+  const boardBoxRef = useRef<HTMLDivElement>(null);
 
   const [navFen, setNavFen] = useState<string | null>(null);
   const [navIndex, setNavIndex] = useState<number | null>(null);
@@ -215,16 +216,15 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
     }
   }
 
+  // Size the board off its actual container, not the raw viewport width. Keying
+  // off innerWidth meant a phone got a flat 350px board inside a ~290px card,
+  // so the g/h files were clipped away and unplayable.
   function handleResize() {
-    if (window.innerWidth >= 1920) {
-      setBoardWidth(580);
-    } else if (window.innerWidth >= 1536) {
-      setBoardWidth(540);
-    } else if (window.innerWidth >= 768) {
-      setBoardWidth(480);
-    } else {
-      setBoardWidth(350);
-    }
+    const available = boardBoxRef.current?.clientWidth;
+    if (!available) return;
+
+    const max = window.innerWidth >= 1920 ? 580 : window.innerWidth >= 1536 ? 540 : 480;
+    setBoardWidth(Math.min(available, max));
   }
 
   function addMessage(message: Message) {
@@ -448,16 +448,16 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       <div
         className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors"
         style={{
-          background: yourTurn ? "rgba(201,162,39,0.1)" : "rgba(13,22,18,0.5)",
-          border: `1px solid ${yourTurn ? "rgba(201,162,39,0.4)" : "rgba(201,162,39,0.12)"}`,
+          background: yourTurn ? "rgb(var(--rgb-gold) / 0.1)" : "rgb(var(--rgb-surface) / 0.5)",
+          border: `1px solid ${yourTurn ? "rgb(var(--rgb-gold) / 0.4)" : "rgb(var(--rgb-gold) / 0.12)"}`,
         }}
       >
         <div
           className="font-display grid h-10 w-10 shrink-0 place-items-center rounded-lg text-sm font-bold"
           style={{
-            background: color === "white" ? "#eae9d2" : "#1b2620",
-            color: color === "white" ? "#1b2620" : "#e8c040",
-            border: "1px solid rgba(201,162,39,0.3)",
+            background: color === "white" ? "var(--c-text-bright)" : "var(--c-bg3)",
+            color: color === "white" ? "var(--c-bg3)" : "var(--c-gold-strong)",
+            border: "1px solid rgb(var(--rgb-gold) / 0.3)",
           }}
         >
           {p?.name ? initial : "?"}
@@ -469,25 +469,25 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                 href={`/user/${p?.name}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="truncate text-sm font-semibold text-[#d8ccb0] hover:text-[#E8C040]"
+                className="truncate text-sm font-semibold text-[var(--c-text)] hover:text-[var(--c-gold-strong)]"
               >
                 {p?.name}
               </a>
             ) : (
-              <span className="truncate text-sm font-semibold text-[#d8ccb0]">
+              <span className="truncate text-sm font-semibold text-[var(--c-text)]">
                 {p?.name || "Waiting…"}
               </span>
             )}
             {isYou && (
-              <span className="rounded-full bg-[rgba(201,162,39,0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#E8C040]">
+              <span className="rounded-full bg-[rgb(var(--rgb-gold)_/_0.15)] px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[var(--c-gold-strong)]">
                 you
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">
+          <div className="flex items-center gap-1.5 text-[0.7rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">
             {color}
             {p?.connected === false && (
-              <span className="rounded bg-[rgba(184,24,24,0.2)] px-1 text-[#e06666]">offline</span>
+              <span className="rounded bg-[rgb(var(--rgb-red)_/_0.2)] px-1 text-[var(--c-red-text)]">offline</span>
             )}
           </div>
         </div>
@@ -498,19 +498,19 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
               color:
                 clock?.running && !lobby.endReason && clock.turn === (color === "white" ? "w" : "b")
                   ? clockMs(color)! <= 30000
-                    ? "#e06666"
-                    : "#E8C040"
-                  : "rgba(216,204,176,0.55)",
+                    ? "var(--c-red-text)"
+                    : "var(--c-gold-strong)"
+                  : "rgb(var(--rgb-text) / 0.55)",
             }}
           >
             {fmtClock(clockMs(color)!)}
           </span>
         )}
         {yourTurn && (
-          <span className="flex shrink-0 items-center gap-1.5 text-[0.7rem] font-semibold text-[#E8C040]">
+          <span className="flex shrink-0 items-center gap-1.5 text-[0.7rem] font-semibold text-[var(--c-gold-strong)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E8C040] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E8C040]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--c-gold-surface)] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--c-gold-surface)]" />
             </span>
             to move
           </span>
@@ -729,14 +729,14 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
       <div className="w-full max-w-[560px]">
         <div
           className="glass-dark relative overflow-hidden rounded-2xl p-2.5 sm:p-3"
-          style={{ border: "1px solid rgba(201,162,39,0.2)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.2)" }}
         >
           <div className="tricolor-bar absolute inset-x-0 top-0 z-20 rounded-none" />
           {/* waiting-for-opponent overlay */}
           {(!lobby.white?.id || !lobby.black?.id) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/70 backdrop-blur-sm">
               <div className="glass-dark flex flex-col items-center gap-3 rounded-xl px-6 py-5 text-center">
-                <span className="text-sm text-[#d8ccb0]">Waiting for opponent…</span>
+                <span className="text-sm text-[var(--c-text)]">Waiting for opponent…</span>
                 {session?.user?.id !== lobby.white?.id &&
                   session?.user?.id !== lobby.black?.id && (
                     <button className="btn-gold text-sm" onClick={clickPlay} disabled={playBtnLoading}>
@@ -761,7 +761,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                   }}
                 >
                   <span className="text-4xl drop-shadow-lg sm:text-5xl">{e.key}</span>
-                  <span className="mt-0.5 max-w-[8rem] truncate rounded-full bg-black/55 px-2 py-0.5 text-[0.6rem] font-medium text-[#e8dcc0]">
+                  <span className="mt-0.5 max-w-[8rem] truncate rounded-full bg-black/55 px-2 py-0.5 text-[0.6rem] font-medium text-[var(--c-text-bright)]">
                     {e.from}
                   </span>
                 </div>
@@ -769,29 +769,31 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             </div>
           )}
 
-          <div className="mx-auto w-fit overflow-hidden rounded-lg">
-            <Chessboard
-              boardWidth={boardWidth}
-              customPieces={ethiopianPieces}
-              customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
-              customLightSquareStyle={{ backgroundColor: boardTheme.light }}
-              position={navFen || lobby.actualGame.fen()}
-              boardOrientation={lobby.side === "b" ? "black" : "white"}
-              isDraggablePiece={isDraggablePiece}
-              onPieceDragBegin={onPieceDragBegin}
-              onPieceDragEnd={onPieceDragEnd}
-              onPieceDrop={onDrop}
-              onSquareClick={onSquareClick}
-              onSquareRightClick={onSquareRightClick}
-              arePremovesAllowed={!navFen}
-              customSquareStyles={{
-                ...(navIndex === null ? customSquares.lastMove : getNavMoveSquares()),
-                ...(navIndex === null ? customSquares.check : {}),
-                ...customSquares.rightClicked,
-                ...(navIndex === null ? customSquares.options : {})
-              }}
-              ref={chessboardRef}
-            />
+          <div ref={boardBoxRef} className="w-full">
+            <div className="mx-auto overflow-hidden rounded-lg" style={{ width: boardWidth }}>
+              <Chessboard
+                boardWidth={boardWidth}
+                customPieces={ethiopianPieces}
+                customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+                customLightSquareStyle={{ backgroundColor: boardTheme.light }}
+                position={navFen || lobby.actualGame.fen()}
+                boardOrientation={lobby.side === "b" ? "black" : "white"}
+                isDraggablePiece={isDraggablePiece}
+                onPieceDragBegin={onPieceDragBegin}
+                onPieceDragEnd={onPieceDragEnd}
+                onPieceDrop={onDrop}
+                onSquareClick={onSquareClick}
+                onSquareRightClick={onSquareRightClick}
+                arePremovesAllowed={!navFen}
+                customSquareStyles={{
+                  ...(navIndex === null ? customSquares.lastMove : getNavMoveSquares()),
+                  ...(navIndex === null ? customSquares.check : {}),
+                  ...customSquares.rightClicked,
+                  ...(navIndex === null ? customSquares.options : {})
+                }}
+                ref={chessboardRef}
+              />
+            </div>
           </div>
         </div>
 
@@ -801,7 +803,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             <button
               key={em}
               onClick={() => sendEmote(em)}
-              className="rounded-lg border border-[rgba(201,162,39,0.18)] bg-[rgba(255,255,255,0.03)] px-2 py-1 text-lg leading-none transition hover:scale-110 hover:border-[rgba(201,162,39,0.5)] hover:bg-[rgba(201,162,39,0.12)] active:scale-95"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-[rgb(var(--rgb-gold)_/_0.18)] bg-[rgb(var(--rgb-overlay)_/_0.03)] text-lg leading-none transition hover:scale-110 hover:border-[rgb(var(--rgb-gold)_/_0.5)] hover:bg-[rgb(var(--rgb-gold)_/_0.12)] active:scale-95"
               title="Send reaction"
             >
               {em}
@@ -827,11 +829,11 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
         {/* Players + whose turn */}
         <div
           className="glass-dark rounded-2xl p-3"
-          style={{ border: "1px solid rgba(201,162,39,0.15)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.15)" }}
         >
           {playerCard(lobby.side === "b" ? "white" : "black")}
           <div className="my-2 flex items-center gap-3 px-1">
-            <span className="h-px flex-1 bg-[rgba(201,162,39,0.15)]" />
+            <span className="h-px flex-1 bg-[rgb(var(--rgb-gold)_/_0.15)]" />
             {lobby.pgn &&
             lobby.white?.id &&
             lobby.black?.id &&
@@ -839,22 +841,22 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             lobby.side !== "s" ? (
               <button
                 onClick={resignGame}
-                className="rounded-full border border-[rgba(224,102,102,0.4)] px-3 py-1 text-xs font-semibold text-[#e06666] transition hover:bg-[rgba(184,24,24,0.15)]"
+                className="rounded-full border border-[rgb(var(--rgb-red-soft)_/_0.4)] px-3 py-1 text-xs font-semibold text-[var(--c-red-text)] transition hover:bg-[rgb(var(--rgb-red)_/_0.15)]"
               >
                 Resign
               </button>
             ) : (
-              <span className="text-xs uppercase tracking-widest text-[rgba(216,204,176,0.35)]">
+              <span className="text-xs uppercase tracking-widest text-[rgb(var(--rgb-text)_/_0.35)]">
                 vs
               </span>
             )}
-            <span className="h-px flex-1 bg-[rgba(201,162,39,0.15)]" />
+            <span className="h-px flex-1 bg-[rgb(var(--rgb-gold)_/_0.15)]" />
           </div>
           {playerCard(lobby.side === "b" ? "black" : "white")}
           {canReport && (
             <button
               onClick={() => setShowReport(true)}
-              className="mt-2 flex w-full items-center justify-center gap-1 text-xs text-[rgba(216,204,176,0.4)] transition hover:text-[#e06666]"
+              className="mt-2 flex w-full items-center justify-center gap-1 text-xs text-[rgb(var(--rgb-text)_/_0.4)] transition hover:text-[var(--c-red-text)]"
             >
               ⚑ Report {opponent?.name}
             </button>
@@ -866,11 +868,11 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
           lobby.pgn &&
           ((lobby.white && session?.user?.id === lobby.white?.id && lobby.black && !lobby.black?.connected) ||
             (lobby.black && session?.user?.id === lobby.black?.id && lobby.white && !lobby.white?.connected)) && (
-            <div className="rounded-xl border border-[rgba(201,162,39,0.25)] bg-[rgba(13,22,18,0.75)] p-3 text-sm text-[#d8ccb0]">
+            <div className="rounded-xl border border-[rgb(var(--rgb-gold)_/_0.25)] bg-[rgb(var(--rgb-surface)_/_0.75)] p-3 text-sm text-[var(--c-text)]">
               {abandonSeconds > 0 ? (
                 <span>
                   Opponent disconnected — you can claim the result in{" "}
-                  <span className="font-semibold text-[#E8C040]">{abandonSeconds}s</span>.
+                  <span className="font-semibold text-[var(--c-gold-strong)]">{abandonSeconds}s</span>.
                 </span>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -878,13 +880,13 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => claimAbandoned("win")}
-                      className="rounded-full bg-[#E8C040] px-3 py-1 text-xs font-semibold text-[#0d1612]"
+                      className="rounded-full bg-[var(--c-gold-surface)] px-3 py-1 text-xs font-semibold text-[#0d1612]"
                     >
                       Claim win
                     </button>
                     <button
                       onClick={() => claimAbandoned("draw")}
-                      className="rounded-full border border-[rgba(201,162,39,0.3)] px-3 py-1 text-xs font-semibold text-[#d8ccb0]"
+                      className="rounded-full border border-[rgb(var(--rgb-gold)_/_0.3)] px-3 py-1 text-xs font-semibold text-[var(--c-text)]"
                     >
                       Draw
                     </button>
@@ -897,17 +899,17 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
         {/* Moves */}
         <div
           className="glass-dark rounded-2xl p-3"
-          style={{ border: "1px solid rgba(201,162,39,0.15)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.15)" }}
         >
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-display text-sm font-bold uppercase tracking-wider text-[#E8C040]">
+            <h3 className="font-display text-sm font-bold uppercase tracking-wider text-[var(--c-gold-strong)]">
               Moves
             </h3>
             <div className={"dropdown dropdown-end" + (copiedLink ? " dropdown-open" : "")}>
               <label
                 tabIndex={0}
                 onClick={copyInvite}
-                className="flex cursor-pointer items-center gap-1 rounded-full bg-[rgba(201,162,39,0.12)] px-2.5 py-1 font-mono text-xs text-[#E8C040] transition hover:bg-[rgba(201,162,39,0.2)]"
+                className="flex cursor-pointer items-center gap-1 rounded-full bg-[rgb(var(--rgb-gold)_/_0.12)] px-2.5 py-1 font-mono text-xs text-[var(--c-gold-strong)] transition hover:bg-[rgb(var(--rgb-gold)_/_0.2)]"
               >
                 <IconCopy size={13} />
                 {lobby.endReason ? `archive/${lobby.id}` : initialLobby.code}
@@ -918,7 +920,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
             </div>
           </div>
           <div
-            className="h-36 overflow-y-auto rounded-lg bg-[rgba(13,22,18,0.5)] p-1"
+            className="h-36 overflow-y-auto rounded-lg bg-[rgb(var(--rgb-surface)_/_0.5)] p-1"
             ref={moveListRef}
           >
             {lobby.actualGame.history().length ? (
@@ -926,7 +928,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                 <tbody>{getMoveListHtml()}</tbody>
               </table>
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-[rgba(216,204,176,0.35)]">
+              <div className="flex h-full items-center justify-center text-xs text-[rgb(var(--rgb-text)_/_0.35)]">
                 No moves yet
               </div>
             )}
@@ -942,7 +944,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                 key={i}
                 onClick={b.fn}
                 disabled={b.off}
-                className="flex flex-1 items-center justify-center rounded-lg bg-[rgba(201,162,39,0.1)] py-2 text-[#E8C040] transition hover:bg-[rgba(201,162,39,0.2)] disabled:opacity-30"
+                className="flex min-h-[40px] flex-1 items-center justify-center rounded-lg bg-[rgb(var(--rgb-gold)_/_0.1)] py-2 text-[var(--c-gold-strong)] transition hover:bg-[rgb(var(--rgb-gold)_/_0.2)] disabled:opacity-30"
               >
                 {b.icon}
               </button>
@@ -954,12 +956,12 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
         {!lobby.vsBot && !lobby.white?.isBot && !lobby.black?.isBot && (
         <div
           className="glass-dark rounded-2xl p-3"
-          style={{ border: "1px solid rgba(201,162,39,0.15)" }}
+          style={{ border: "1px solid rgb(var(--rgb-gold) / 0.15)" }}
         >
           {lobby.white && lobby.black && lobby.code && (
             <JitsiVideo gameCode={lobby.code} isPlayer={lobby.side === "w" || lobby.side === "b"} />
           )}
-          <div className="mt-2 flex h-56 flex-col rounded-lg bg-[rgba(13,22,18,0.5)] p-3">
+          <div className="mt-2 flex h-56 flex-col rounded-lg bg-[rgb(var(--rgb-surface)_/_0.5)] p-3">
             <ul
               className="mb-3 flex flex-1 flex-col gap-1.5 overflow-y-auto break-words text-sm"
               ref={chatListRef}
@@ -971,15 +973,15 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
                     key={i}
                     className={
                       isServer
-                        ? "rounded bg-[rgba(201,162,39,0.08)] px-2 py-1 text-xs text-[rgba(216,204,176,0.6)]"
-                        : "text-[#d8ccb0]"
+                        ? "rounded bg-[rgb(var(--rgb-gold)_/_0.08)] px-2 py-1 text-xs text-[rgb(var(--rgb-text)_/_0.6)]"
+                        : "text-[var(--c-text)]"
                     }
                   >
                     {m.author.id && (
                       <a
                         className={
                           "font-semibold " +
-                          (typeof m.author.id === "number" ? "text-[#E8C040] hover:underline" : "")
+                          (typeof m.author.id === "number" ? "text-[var(--c-gold-strong)] hover:underline" : "")
                         }
                         href={typeof m.author.id === "number" ? `/user/${m.author.name}` : undefined}
                         target="_blank"
@@ -997,7 +999,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
               <input
                 type="text"
                 placeholder="Chat here…"
-                className="input-field flex-grow !py-2 text-sm"
+                className="input-field min-w-0 flex-grow !py-2"
                 name="chatInput"
                 id="chatInput"
                 onKeyUp={chatKeyUp}
@@ -1012,7 +1014,7 @@ export default function GamePage({ initialLobby }: { initialLobby: Game }) {
         )}
 
         {lobby.observers && lobby.observers.length > 0 && (
-          <p className="px-1 text-xs text-[rgba(216,204,176,0.4)]">
+          <p className="px-1 text-xs text-[rgb(var(--rgb-text)_/_0.4)]">
             Spectators: {lobby.observers?.map((o) => o.name).join(", ")}
           </p>
         )}

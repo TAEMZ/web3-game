@@ -41,10 +41,10 @@ export default async function Profile({ params }: { params: { name: string } }) 
   const initial = (data.name || "?").replace(/^0x/, "").charAt(0).toUpperCase() || "♔";
 
   const tiles = [
-    { label: "Wins", value: wins, color: "#5fb884" },
-    { label: "Draws", value: draws, color: "#E8C040" },
-    { label: "Losses", value: losses, color: "#e06666" },
-    { label: "Win rate", value: `${winRate}%`, color: "#d8ccb0" }
+    { label: "Wins", value: wins, color: "var(--c-green-text)" },
+    { label: "Draws", value: draws, color: "var(--c-gold-strong)" },
+    { label: "Losses", value: losses, color: "var(--c-red-text)" },
+    { label: "Win rate", value: `${winRate}%`, color: "var(--c-text)" }
   ];
 
   return (
@@ -52,7 +52,7 @@ export default async function Profile({ params }: { params: { name: string } }) 
       {/* ── Hero ── */}
       <section
         className="glass-dark relative overflow-hidden rounded-3xl p-6 md:p-8"
-        style={{ border: "1px solid rgba(201,162,39,0.22)" }}
+        style={{ border: "1px solid rgb(var(--rgb-gold) / 0.22)" }}
       >
         <div className="tricolor-bar absolute inset-x-0 top-0 rounded-none" />
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -60,16 +60,16 @@ export default async function Profile({ params }: { params: { name: string } }) 
             <div
               className="font-display grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-black text-[#0d1612]"
               style={{
-                background: "linear-gradient(135deg,#e8c040,#c9a227 55%,#9a7a18)",
-                boxShadow: "0 6px 22px rgba(201,162,39,0.35)"
+                background: "linear-gradient(135deg,var(--c-gold-strong),var(--c-gold) 55%,var(--c-gold-deep))",
+                boxShadow: "0 6px 22px rgb(var(--rgb-gold) / 0.35)"
               }}
             >
               {initial}
             </div>
             <div className="min-w-0">
-              <p className="text-xs uppercase tracking-[0.15em] text-[rgba(216,204,176,0.45)]">Player profile</p>
-              <h1 className="font-display truncate text-2xl font-black text-[#d8ccb0] md:text-3xl">{data.name}</h1>
-              <p className="mt-1 text-xs text-[rgba(216,204,176,0.5)]">
+              <p className="text-xs uppercase tracking-[0.15em] text-[rgb(var(--rgb-text)_/_0.45)]">Player profile</p>
+              <h1 className="font-display truncate text-2xl font-black text-[var(--c-text)] md:text-3xl">{data.name}</h1>
+              <p className="mt-1 text-xs text-[rgb(var(--rgb-text)_/_0.5)]">
                 {played} game{played === 1 ? "" : "s"} played
               </p>
             </div>
@@ -82,12 +82,12 @@ export default async function Profile({ params }: { params: { name: string } }) 
             <div
               key={t.label}
               className="rounded-xl px-4 py-3 text-center"
-              style={{ background: "rgba(13,22,18,0.55)", border: "1px solid rgba(201,162,39,0.12)" }}
+              style={{ background: "rgb(var(--rgb-surface) / 0.55)", border: "1px solid rgb(var(--rgb-gold) / 0.12)" }}
             >
               <p className="font-display text-2xl font-bold tabular-nums" style={{ color: t.color }}>
                 {t.value}
               </p>
-              <p className="text-[0.7rem] uppercase tracking-wider text-[rgba(216,204,176,0.45)]">{t.label}</p>
+              <p className="text-[0.7rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.45)]">{t.label}</p>
             </div>
           ))}
         </div>
@@ -95,15 +95,15 @@ export default async function Profile({ params }: { params: { name: string } }) 
 
       {/* ── Recent games ── */}
       <div className="mt-8">
-        <h2 className="font-display mb-3 text-lg font-bold text-[#E8C040]">Recent games</h2>
+        <h2 className="font-display mb-3 text-lg font-bold text-[var(--c-gold-strong)]">Recent games</h2>
 
         {data.recentGames.length === 0 ? (
           <div
             className="glass-dark rounded-2xl px-6 py-12 text-center"
-            style={{ border: "1px solid rgba(201,162,39,0.15)" }}
+            style={{ border: "1px solid rgb(var(--rgb-gold) / 0.15)" }}
           >
             <p className="text-4xl opacity-40">♟️</p>
-            <p className="mt-3 text-sm text-[rgba(216,204,176,0.5)]">No games played yet.</p>
+            <p className="mt-3 text-sm text-[rgb(var(--rgb-text)_/_0.5)]">No games played yet.</p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -116,20 +116,20 @@ export default async function Profile({ params }: { params: { name: string } }) 
                 const href = link(p);
                 return (
                   <div className={"flex flex-col " + (color === "black" ? "items-end text-right" : "")}>
-                    <span className="flex items-center gap-1 text-[0.65rem] uppercase tracking-wider text-[rgba(216,204,176,0.4)]">
+                    <span className="flex items-center gap-1 text-[0.65rem] uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.4)]">
                       {color}
                       {won && (
-                        <span className="rounded bg-[rgba(26,107,63,0.25)] px-1.5 text-[0.6rem] font-bold text-[#5fb884]">
+                        <span className="rounded bg-[rgb(var(--rgb-green-deep)_/_0.25)] px-1.5 text-[0.6rem] font-bold text-[var(--c-green-text)]">
                           won
                         </span>
                       )}
                     </span>
                     {href ? (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="truncate font-semibold text-[#d8ccb0] hover:text-[#E8C040]">
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="truncate font-semibold text-[var(--c-text)] hover:text-[var(--c-gold-strong)]">
                         {p?.name}
                       </a>
                     ) : (
-                      <span className="truncate font-semibold text-[#d8ccb0]">{p?.name || "—"}</span>
+                      <span className="truncate font-semibold text-[var(--c-text)]">{p?.name || "—"}</span>
                     )}
                   </div>
                 );
@@ -139,24 +139,24 @@ export default async function Profile({ params }: { params: { name: string } }) 
                 <li
                   key={game.id}
                   className="glass-dark flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl px-4 py-3"
-                  style={{ border: "1px solid rgba(201,162,39,0.12)" }}
+                  style={{ border: "1px solid rgb(var(--rgb-gold) / 0.12)" }}
                 >
                   <div className="flex min-w-[220px] flex-1 items-center gap-3">
                     {seat("white")}
-                    <span className="font-display text-xs text-[rgba(216,204,176,0.35)]">vs</span>
+                    <span className="font-display text-xs text-[rgb(var(--rgb-text)_/_0.35)]">vs</span>
                     {seat("black")}
                   </div>
-                  <div className="text-xs capitalize text-[rgba(216,204,176,0.55)]">
+                  <div className="text-xs capitalize text-[rgb(var(--rgb-text)_/_0.55)]">
                     {game.winner === "draw" ? "draw" : reasonLabel(game.endReason as string)}
                   </div>
-                  <span className="text-[0.7rem] text-[rgba(216,204,176,0.35)]">
+                  <span className="text-[0.7rem] text-[rgb(var(--rgb-text)_/_0.35)]">
                     {game.endedAt ? new Date(game.endedAt as number).toLocaleDateString() : ""}
                   </span>
                   <a
                     href={`/archive/${game.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto rounded-full bg-[rgba(201,162,39,0.12)] px-3 py-1 text-xs font-semibold text-[#E8C040] transition hover:bg-[rgba(201,162,39,0.22)]"
+                    className="ml-auto rounded-full bg-[rgb(var(--rgb-gold)_/_0.12)] px-3 py-1 text-xs font-semibold text-[var(--c-gold-strong)] transition hover:bg-[rgb(var(--rgb-gold)_/_0.22)]"
                   >
                     Review
                   </a>

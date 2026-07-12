@@ -85,7 +85,7 @@ export default function CreateGame() {
       </div>
 
       {opponent === "human" && (
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-[rgba(216,204,176,0.7)]">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[rgb(var(--rgb-text)_/_0.7)]">
           <input
             type="checkbox"
             className="checkbox checkbox-warning checkbox-sm"

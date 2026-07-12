@@ -1,41 +1,26 @@
 "use client";
 
-import { IconShield, IconTrophy, IconChartBar, IconChess } from "@tabler/icons-react";
 import Link from "next/link";
-import { useContext } from "react";
 
-import { SessionContext } from "@/context/session";
+import { useNavLinks } from "./navLinks";
 
-// Admins get an admin-only nav; players get Rewards + Leaderboard. Keeps the two
-// roles' navigation separate.
+// Desktop nav. The phone equivalent is <MobileNav>; both render the same list
+// from useNavLinks() so they can't drift apart.
 export default function HeaderNav() {
-  const session = useContext(SessionContext);
-  const linkClass =
-    "flex items-center gap-1.5 text-sm font-semibold text-[rgba(216,204,176,0.7)] transition-colors hover:text-[#E8C040]";
-
-  if (session?.user?.is_admin) {
-    return (
-      <Link href="/admin" className={linkClass}>
-        <IconShield size={16} />
-        <span>Admin</span>
-      </Link>
-    );
-  }
+  const links = useNavLinks();
 
   return (
     <>
-      <Link href="/play" className={linkClass}>
-        <IconChess size={16} />
-        <span>Play</span>
-      </Link>
-      <Link href="/rewards" className={linkClass}>
-        <IconTrophy size={16} />
-        <span>Rewards</span>
-      </Link>
-      <Link href="/leaderboard" className={linkClass}>
-        <IconChartBar size={16} />
-        <span>Leaderboard</span>
-      </Link>
+      {links.map(({ href, label, Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          className="flex items-center gap-1.5 text-sm font-semibold text-[rgb(var(--rgb-text)_/_0.7)] transition-colors hover:text-[var(--c-gold-strong)]"
+        >
+          <Icon size={16} />
+          <span>{label}</span>
+        </Link>
+      ))}
     </>
   );
 }

@@ -4,30 +4,110 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ─────────────────────────────────────────────────────────────
+   Theme tokens.
+
+   Every colour in the app resolves through these. The --rgb-* vars are bare
+   channel triplets so components can apply their own alpha with
+   rgb(var(--rgb-text) / 0.4) — that's what lets a single token carry the whole
+   range of tints a colour is used at.
+
+   The dark values below are byte-identical to the palette the app shipped with,
+   so arenaDark renders exactly as before; arenaLight re-points the same tokens.
+   ───────────────────────────────────────────────────────────── */
+:root,
+[data-theme="arenaDark"] {
+  --rgb-text: 216 204 176;
+  --rgb-gold: 201 162 39;
+  --rgb-surface: 13 22 18;
+  --rgb-surface2: 22 34 26;
+  --rgb-green: 95 184 132;
+  --rgb-green-deep: 26 107 63;
+  --rgb-red: 184 24 24;
+  --rgb-red-soft: 224 102 102;
+  --rgb-overlay: 255 255 255;
+
   --c-bg: #0d1612;
   --c-bg2: #111a15;
   --c-bg3: #16221a;
-  --c-border: rgba(180, 140, 40, 0.25);
+  --c-text: #d8ccb0;
+  --c-text-bright: #e8dcc0;
   --c-gold: #c9a227;
-  --c-gold-l: #e8c040;
+  --c-gold-strong: #e8c040;
+  --c-gold-bright: #f5d970;
+  --c-gold-deep: #9a7a18;
+  --c-green-text: #5fb884;
+  --c-red-text: #e06666;
   --c-green: #1a6b3f;
   --c-teal: #0e7a5f;
-  --c-text: #d8ccb0;
-  --c-muted: rgba(216, 204, 176, 0.5);
   --c-red: #b81818;
+  --c-gold-l: #e8c040;
+  --c-border: rgb(var(--rgb-gold) / 0.25);
+  --c-muted: rgb(var(--rgb-text) / 0.5);
+
+  /* Gold as a *surface* (chips, dots, the "your turn" pill). Deliberately does
+     NOT flip with the theme: these carry near-black ink, and a gold chip reads
+     as a gold chip on either base. Not to be confused with --c-gold-strong,
+     which is gold as *text* and darkens on the light base for contrast. */
+  --c-gold-surface: #e8c040;
+
+  /* Recessed "wells" — inputs and list rows sunk into a card. On the dark base
+     that's a wash of black; on the light base the same black would read as a
+     grey slab under near-black text, so it inverts to a faint warm tint. The
+     alpha ladder is kept so the dark theme is unchanged. */
+  --c-well-20: rgb(0 0 0 / 0.2);
+  --c-well-25: rgb(0 0 0 / 0.25);
+  --c-well-30: rgb(0 0 0 / 0.3);
+  --c-well-35: rgb(0 0 0 / 0.35);
+}
+
+[data-theme="arenaLight"] {
+  /* Ink, not cream — this is the flip that makes body copy legible on parchment. */
+  --rgb-text: 42 36 22;
+  /* Gold is *never* a background in this app (only text, icons, borders), so it
+     darkens here to clear contrast on the cream base instead of washing out. */
+  --rgb-gold: 138 106 16;
+  /* Panels become white cards floating on the parchment base. */
+  --rgb-surface: 255 255 255;
+  --rgb-surface2: 255 255 255;
+  --rgb-green: 21 122 69;
+  --rgb-green-deep: 21 122 69;
+  --rgb-red: 176 32 32;
+  --rgb-red-soft: 192 57 43;
+  /* White sheens would vanish on cream — invert them to a dark wash. */
+  --rgb-overlay: 20 16 6;
+
+  --c-bg: #faf6ea;
+  --c-bg2: #f2ecd9;
+  --c-bg3: #e6ddc4;
+  --c-text: #2a2416;
+  --c-text-bright: #17130a;
+  --c-gold: #9a7a18;
+  --c-gold-strong: #8a6a10;
+  --c-gold-bright: #7a5c12;
+  --c-gold-deep: #6b5410;
+  --c-green-text: #157a45;
+  --c-red-text: #c0392b;
+  --c-green: #0f5c34;
+  --c-teal: #0b6650;
+  --c-red: #b02020;
+  --c-gold-l: #8a6a10;
+  --c-border: rgb(var(--rgb-gold) / 0.3);
+  --c-muted: rgb(var(--rgb-text) / 0.6);
+
+  --c-well-20: rgb(20 16 6 / 0.03);
+  --c-well-25: rgb(20 16 6 / 0.04);
+  --c-well-30: rgb(20 16 6 / 0.05);
+  --c-well-35: rgb(20 16 6 / 0.06);
 }
 
 body {
   font-family: "Inter", sans-serif;
-}
-
-/* Rich dark arena backdrop (dark theme only; light theme falls back to daisyUI) */
-[data-theme="arenaDark"] body {
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26, 107, 63, 0.16) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 90% 90%, rgba(201, 162, 39, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(var(--rgb-green-deep) / 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 90%, rgb(var(--rgb-gold) / 0.06) 0%, transparent 55%),
     var(--c-bg);
+  color: var(--c-text);
 }
 
 /* Ethiopian geometric pattern for login page */
@@ -38,19 +118,19 @@ body {
       45deg,
       transparent,
       transparent 100px,
-      rgba(201, 162, 39, 0.02) 100px,
-      rgba(201, 162, 39, 0.02) 102px
+      rgb(var(--rgb-gold) / 0.02) 100px,
+      rgb(var(--rgb-gold) / 0.02) 102px
     ),
     repeating-linear-gradient(
       -45deg,
       transparent,
       transparent 100px,
-      rgba(26, 107, 63, 0.02) 100px,
-      rgba(26, 107, 63, 0.02) 102px
+      rgb(var(--rgb-green-deep) / 0.02) 100px,
+      rgb(var(--rgb-green-deep) / 0.02) 102px
     ),
-    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(201, 162, 39, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 10% 100%, rgba(26, 107, 63, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 90% 100%, rgba(218, 18, 18, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgb(var(--rgb-gold) / 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 100%, rgb(var(--rgb-green-deep) / 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 90% 100%, rgb(var(--rgb-red) / 0.05) 0%, transparent 50%),
     var(--c-bg);
 }
 
@@ -62,7 +142,14 @@ body {
   font-family: "IBM Plex Mono", monospace;
 }
 .gold-text-shimmer {
-  background: linear-gradient(90deg, #c9a227 0%, #e8c040 40%, #f5d970 50%, #e8c040 60%, #c9a227 100%);
+  background: linear-gradient(
+    90deg,
+    var(--c-gold) 0%,
+    var(--c-gold-strong) 40%,
+    var(--c-gold-bright) 50%,
+    var(--c-gold-strong) 60%,
+    var(--c-gold) 100%
+  );
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -72,13 +159,13 @@ body {
 
 /* ── Glass card ── */
 .glass {
-  background: rgba(22, 34, 26, 0.75);
+  background: rgb(var(--rgb-surface2) / 0.75);
   backdrop-filter: blur(16px);
   border: 1px solid var(--c-border);
   border-radius: 16px;
 }
 .glass-dark {
-  background: rgba(13, 22, 18, 0.9);
+  background: rgb(var(--rgb-surface) / 0.9);
   backdrop-filter: blur(20px);
   border: 1px solid var(--c-border);
   border-radius: 16px;
@@ -96,15 +183,18 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
+  /* The gold button is a gold *surface* in both themes — it keeps the vivid
+     gradient and its near-black label rather than following --c-gold-strong,
+     which darkens for text contrast on the light base. */
   background: linear-gradient(135deg, #e8c040 0%, #c9a227 50%, #9a7a18 100%);
   color: #0d1612;
   border: none;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 20px rgba(201, 162, 39, 0.35);
+  box-shadow: 0 4px 20px rgb(var(--rgb-gold) / 0.35);
 }
 .btn-gold:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(201, 162, 39, 0.5);
+  box-shadow: 0 8px 30px rgb(var(--rgb-gold) / 0.5);
 }
 .btn-gold:active {
   transform: translateY(0);
@@ -126,14 +216,14 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
-  background: rgba(13, 22, 18, 0.9);
+  background: rgb(var(--rgb-surface) / 0.9);
   color: var(--c-text);
-  border: 1px solid rgba(201, 162, 39, 0.3);
+  border: 1px solid rgb(var(--rgb-gold) / 0.3);
   letter-spacing: 0.02em;
 }
 .btn-dark:hover {
-  background: rgba(22, 34, 26, 0.95);
-  border-color: rgba(201, 162, 39, 0.6);
+  background: rgb(var(--rgb-surface2) / 0.95);
+  border-color: rgb(var(--rgb-gold) / 0.6);
   transform: translateY(-1px);
 }
 
@@ -142,21 +232,21 @@ body {
   width: 100%;
   padding: 13px 16px;
   border-radius: 12px;
-  background: rgba(13, 22, 18, 0.7);
-  border: 1.5px solid rgba(201, 162, 39, 0.25);
+  background: rgb(var(--rgb-surface) / 0.7);
+  border: 1.5px solid rgb(var(--rgb-gold) / 0.25);
   color: var(--c-text);
-  font-size: 0.95rem;
+  font-size: 16px; /* < 16px makes iOS Safari zoom the page on focus */
   outline: none;
   transition: all 0.25s ease;
   font-family: "Inter", sans-serif;
 }
 .input-field:focus {
   border-color: var(--c-gold);
-  background: rgba(13, 22, 18, 0.9);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.12);
+  background: rgb(var(--rgb-surface) / 0.95);
+  box-shadow: 0 0 0 3px rgb(var(--rgb-gold) / 0.12);
 }
 .input-field::placeholder {
-  color: rgba(216, 204, 176, 0.35);
+  color: rgb(var(--rgb-text) / 0.45);
 }
 
 /* ── Field label ── */
@@ -165,7 +255,7 @@ body {
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.1em;
-  color: rgba(216, 204, 176, 0.5);
+  color: var(--c-muted);
   margin-bottom: 6px;
   text-transform: uppercase;
 }
@@ -173,7 +263,7 @@ body {
 /* ── Gold accent bar (was the flag tricolor) ── */
 .tricolor-bar {
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(154, 122, 24, 0.7) 12%, #e8c040 50%, rgba(154, 122, 24, 0.7) 88%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--rgb-gold) / 0.7) 12%, var(--c-gold-strong) 50%, rgb(var(--rgb-gold) / 0.7) 88%, transparent 100%);
   border-radius: 99px;
 }
 
@@ -188,10 +278,10 @@ body {
   inset: 0;
   z-index: -1;
   background-image:
-    repeating-linear-gradient(45deg, rgba(201, 162, 39, 0.07) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(-45deg, rgba(201, 162, 39, 0.07) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(45deg, rgba(26, 107, 63, 0.06) 0 1px, transparent 1px 40px),
-    repeating-linear-gradient(-45deg, rgba(26, 107, 63, 0.06) 0 1px, transparent 1px 40px);
+    repeating-linear-gradient(45deg, rgb(var(--rgb-gold) / 0.07) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(-45deg, rgb(var(--rgb-gold) / 0.07) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(45deg, rgb(var(--rgb-green-deep) / 0.06) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(-45deg, rgb(var(--rgb-green-deep) / 0.06) 0 1px, transparent 1px 40px);
   -webkit-mask-image: radial-gradient(ellipse 82% 70% at 50% 28%, #000 18%, transparent 82%);
   mask-image: radial-gradient(ellipse 82% 70% at 50% 28%, #000 18%, transparent 82%);
   pointer-events: none;
@@ -202,8 +292,8 @@ body {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(ellipse 70% 55% at 50% -5%, rgba(201, 162, 39, 0.1) 0%, transparent 62%),
-    radial-gradient(ellipse 65% 50% at 50% 105%, rgba(26, 107, 63, 0.1) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 55% at 50% -5%, rgb(var(--rgb-gold) / 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 65% 50% at 50% 105%, rgb(var(--rgb-green-deep) / 0.1) 0%, transparent 58%),
     var(--c-bg);
 }
 .chess-bg::before {
@@ -211,7 +301,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: repeating-conic-gradient(rgba(201, 162, 39, 0.05) 0% 25%, transparent 0% 50%);
+  background-image: repeating-conic-gradient(rgb(var(--rgb-gold) / 0.05) 0% 25%, transparent 0% 50%);
   background-size: 128px 128px;
   background-position: center top;
   -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 32%, #000 12%, transparent 78%);
@@ -267,11 +357,11 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(201, 162, 39, 0.3);
+  background: rgb(var(--rgb-gold) / 0.3);
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 162, 39, 0.5);
+  background: rgb(var(--rgb-gold) / 0.5);
 }
 
 /* ── Emote reactions (float up + fade over the board) ── */

@@ -45,15 +45,15 @@ export default function ReportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
       <div
         className="glass-dark w-full max-w-md overflow-hidden rounded-2xl p-6"
-        style={{ border: "1px solid rgba(201,162,39,0.3)" }}
+        style={{ border: "1px solid rgb(var(--rgb-gold) / 0.3)" }}
       >
         <div className="tricolor-bar mb-4" />
-        <h2 className="font-display text-xl font-bold text-[#E8C040]">Report {reportedName}</h2>
-        <p className="mb-4 text-xs text-[rgba(216,204,176,0.5)]">An admin will review this report.</p>
+        <h2 className="font-display text-xl font-bold text-[var(--c-gold-strong)]">Report {reportedName}</h2>
+        <p className="mb-4 text-xs text-[rgb(var(--rgb-text)_/_0.5)]">An admin will review this report.</p>
 
         {state === "done" ? (
           <div className="py-4 text-center">
-            <p className="mb-4 text-[#5fb884]">✓ Report submitted — thanks. An admin will review it.</p>
+            <p className="mb-4 text-[var(--c-green-text)]">✓ Report submitted — thanks. An admin will review it.</p>
             <button onClick={onClose} className="btn-gold">
               Close
             </button>
@@ -85,12 +85,12 @@ export default function ReportModal({
               />
             </div>
             {chatSnapshot && (
-              <p className="text-xs text-[rgba(216,204,176,0.4)]">
+              <p className="text-xs text-[rgb(var(--rgb-text)_/_0.4)]">
                 The recent chat from this game will be attached for the admin.
               </p>
             )}
             {state === "error" && (
-              <p className="text-sm text-[#e06666]">Could not submit — please try again.</p>
+              <p className="text-sm text-[var(--c-red-text)]">Could not submit — please try again.</p>
             )}
             <div className="flex gap-2">
               <button onClick={submit} disabled={state === "sending"} className="btn-gold flex-1">

@@ -13,7 +13,7 @@ export default function BoardThemePicker({
 }) {
   return (
     <div className="mt-3 flex items-center justify-center gap-2">
-      <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-[rgba(216,204,176,0.4)]">
+      <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-[rgb(var(--rgb-text)_/_0.4)]">
         Board
       </span>
       {BOARD_THEMES.map((t) => {
@@ -29,7 +29,7 @@ export default function BoardThemePicker({
             }}
             className="h-6 w-6 overflow-hidden rounded-md transition hover:scale-110"
             style={{
-              boxShadow: active ? "0 0 0 2px #E8C040" : "0 0 0 1px rgba(201,162,39,0.25)",
+              boxShadow: active ? "0 0 0 2px var(--c-gold-strong)" : "0 0 0 1px rgb(var(--rgb-gold) / 0.25)",
             }}
           >
             <span className="grid h-full w-full grid-cols-2 grid-rows-2">
