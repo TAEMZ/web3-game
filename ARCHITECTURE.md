@@ -102,7 +102,7 @@ generated fully on-chain as a base64 `data:` URI — nothing is hosted off-chain
 | Draw reward | **+10 ARENA** | `REWARD_DRAW` | `server/src/db/models/game.model.ts` |
 | Resign penalty (accounting) | **−25 ARENA** | — | `server/src/controllers/admin.controller.ts` |
 | Sign-in USDC drip | **100 USDC** (top up if < 10) | `USD_DRIP` / `USD_FLOOR` | `server/src/web3/usd.ts` |
-| Sign-in ETH gas drip | **0.004 ETH** (top up if < 0.0015) | `PLAYER_GAS_ETH` / `PLAYER_GAS_FLOOR` | `server/src/web3/gas.ts` |
+| Player ETH gas drip | **8 calls' worth** at the live gas price (top up if < 3 calls); checked at sign-in *and before every transaction* | `PLAYER_GAS_CALLS` / `PLAYER_GAS_FLOOR_CALLS` / `PLAYER_GAS_MAX_ETH` | `server/src/web3/gas.ts`, `client/src/lib/gas.ts` |
 | Subscription (unlock wager mode) | **500 ARENA** (one-time = 5 USDC ≈ $5) | `SUBSCRIPTION_ARENA` | `server/src/controllers/subscription.controller.ts` |
 
 **Fiat display:** ARENA is shown as USD at `$0.01`/token; the withdrawal path further

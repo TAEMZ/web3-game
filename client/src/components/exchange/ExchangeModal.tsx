@@ -3,7 +3,8 @@
 import { IconX, IconCheck, IconCoins, IconArrowNarrowRight } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { prepareContractCall, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { prepareContractCall, readContract, waitForReceipt } from "thirdweb";
+import { sendFunded } from "@/lib/gas";
 
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
 import {
@@ -89,7 +90,7 @@ export default function ExchangeModal({
         method: "function approve(address spender, uint256 amount) returns (bool)",
         params: [ARENA_EXCHANGE_ADDRESS, usdcUnits],
       });
-      let sent = await sendTransaction({ transaction: approveTx, account });
+      let sent = await sendFunded({ transaction: approveTx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
 
       setStep("Buying ARENA…");
@@ -98,7 +99,7 @@ export default function ExchangeModal({
         method: "function buyArena(uint256 usdcAmount)",
         params: [usdcUnits],
       });
-      sent = await sendTransaction({ transaction: buyTx, account });
+      sent = await sendFunded({ transaction: buyTx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
 
       await refresh();

@@ -12,7 +12,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { prepareContractCall, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { prepareContractCall, readContract, waitForReceipt } from "thirdweb";
+import { sendFunded } from "@/lib/gas";
 
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
@@ -124,7 +125,7 @@ export default function PlayPlans() {
         method: "function transfer(address to, uint256 amount) returns (bool)",
         params: [treasury, toUsdcUnits(priceUsd)],
       });
-      const sent = await sendTransaction({ transaction: tx, account });
+      const sent = await sendFunded({ transaction: tx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
 
       setStep("Submitting for verification…");

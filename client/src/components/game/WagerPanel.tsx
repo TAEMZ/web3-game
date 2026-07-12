@@ -10,9 +10,9 @@ import {
   prepareContractCall,
   prepareEvent,
   readContract,
-  sendTransaction,
   waitForReceipt,
 } from "thirdweb";
+import { sendFunded } from "@/lib/gas";
 
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
 import { ARENA_ESCROW_ADDRESS, escrowContract, toArenaWei, tokenContract } from "@/lib/contracts";
@@ -95,7 +95,7 @@ export default function WagerPanel({
       method: "function approve(address spender, uint256 amount) returns (bool)",
       params: [ARENA_ESCROW_ADDRESS, stakeWei],
     });
-    const { transactionHash } = await sendTransaction({ transaction: tx, account: account! });
+    const { transactionHash } = await sendFunded({ transaction: tx, account: account! });
     await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash });
   }
 
@@ -133,7 +133,7 @@ export default function WagerPanel({
         method: "function createMatch(uint256 stake) returns (uint256)",
         params: [stakeWei],
       });
-      const { transactionHash } = await sendTransaction({ transaction: createTx, account });
+      const { transactionHash } = await sendFunded({ transaction: createTx, account });
       const receipt = await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash });
       const events = parseEventLogs({ logs: receipt.logs, events: [matchCreatedEvent] });
       const matchId = Number(events[0]?.args?.id);
@@ -182,7 +182,7 @@ export default function WagerPanel({
         method: "function joinMatch(uint256 id)",
         params: [BigInt(wager.match_id)],
       });
-      const { transactionHash } = await sendTransaction({ transaction: joinTx, account });
+      const { transactionHash } = await sendFunded({ transaction: joinTx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash });
       setStep("Recording…");
       const res = await fetch(`${API_URL}/v1/wager/join`, {

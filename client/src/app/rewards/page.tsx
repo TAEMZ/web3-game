@@ -3,7 +3,8 @@
 import { IconCoins, IconMedal, IconMedal2, IconStar, IconTrophy, IconArrowUpRight, IconArrowDownLeft, IconWallet } from "@tabler/icons-react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { prepareContractCall, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { prepareContractCall, readContract, waitForReceipt } from "thirdweb";
+import { sendFunded } from "@/lib/gas";
 import { SessionContext } from "@/context/session";
 import { API_URL } from "@/config";
 import { activeChain, thirdwebClient } from "@/lib/thirdweb";
@@ -201,7 +202,7 @@ export default function RewardsPage() {
         method: "function transfer(address to, uint256 amount) returns (bool)",
         params: [treasury, cost],
       });
-      const sent = await sendTransaction({ transaction: tx, account });
+      const sent = await sendFunded({ transaction: tx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash: sent.transactionHash });
 
       // 2) File the request for admin verify & release — the admin still mints; we never release here.
@@ -250,7 +251,7 @@ export default function RewardsPage() {
         method: "function burn(uint256 amount)",
         params: [toArenaWei(wAmt)],
       });
-      const { transactionHash } = await sendTransaction({ transaction: burnTx, account });
+      const { transactionHash } = await sendFunded({ transaction: burnTx, account });
       await waitForReceipt({ client: thirdwebClient, chain: activeChain, transactionHash });
 
       const res = await fetch(`${API_URL}/v1/withdrawals`, {

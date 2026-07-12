@@ -12,6 +12,7 @@ import withdrawal from "./withdrawal.route.js";
 import leaderboard from "./leaderboard.route.js";
 import subscription from "./subscription.route.js";
 import jitsi from "./jitsi.route.js";
+import wallet from "./wallet.route.js";
 import { getConfig } from "../controllers/config.controller.js";
 
 const router = Router();
@@ -29,5 +30,6 @@ router.use("/withdrawals", withdrawal);
 router.use("/leaderboard", leaderboard);
 router.use("/subscription", subscription);
 router.use("/jitsi", jitsi);
+router.use("/wallet", wallet);
 
 export default router;

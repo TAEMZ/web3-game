@@ -82,8 +82,13 @@ Environment:
    DEPLOYER_PRIVATE_KEY=…     RPC_URL=…   (treasury that mints/drips/settles)
    SUBSCRIPTION_ARENA=500     USD_DRIP=100   USD_FLOOR=10
    REWARD_WIN=50              REWARD_DRAW=10
-   PLAYER_GAS_ETH=0.004       PLAYER_GAS_FLOOR=0.0015
+   PLAYER_GAS_CALLS=8         PLAYER_GAS_FLOOR_CALLS=3   PLAYER_GAS_MAX_ETH=0.05
    ```
+   Player gas is budgeted in *transactions*, not ether: the treasury keeps each
+   player's wallet funded for `PLAYER_GAS_CALLS` contract calls at the network's
+   current gas price, refilling once it drops below `PLAYER_GAS_FLOOR_CALLS`.
+   (Replaces the old fixed `PLAYER_GAS_ETH` / `PLAYER_GAS_FLOOR`, which went stale
+   whenever the gas price moved and stranded players mid-wager.)
    Without the addresses/key, the web3 layer no-ops and balances are DB-simulated.
 
 ## Features Roadmap
